@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.middleware.rls import RLSMiddleware
 
 # Setup logging
 setup_logging()
@@ -19,7 +20,8 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Add CORS middleware
+# Add middleware
+app.add_middleware(RLSMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Configure appropriately for production
