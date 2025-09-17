@@ -1,0 +1,21 @@
+---
+alwaysApply: false
+---
+Auth, Keys, and Safety
+
+API Keys
+	•	Header: X-Api-Key: <token>. Hash keys at rest (e.g., SHA-256 + salt). On creation, return plaintext once.
+	•	Middleware must:
+	1.	Verify key → load tenant_id.
+	2.	Attach to request context.
+	3.	SET LOCAL app.tenant_id on DB session.
+
+Defense in Depth
+	•	App-level checks AND RLS at the DB. If app code forgets a filter, RLS still blocks.  ￼
+	•	Validate all inputs; bound pagination; deny unknown query params by default.
+
+Secrets
+	•	No raw secrets in repo. Use env vars locally; AWS Secrets Manager in prod.  ￼
+
+Error model
+	•	401/403 for auth issues, 404 for cross-tenant resource, 422 for validation; include trace_id.

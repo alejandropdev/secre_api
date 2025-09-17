@@ -1,0 +1,23 @@
+---
+alwaysApply: false
+---
+Postgres, RLS & jsonb
+
+Tenancy
+	•	Every multi-tenant table has tenant_id uuid NOT NULL.
+	•	On each request, set SET LOCAL app.tenant_id = '<uuid>' at the DB session.
+	•	Enable RLS on all multi-tenant tables; create USING + WITH CHECK policies that match tenant_id = current_setting('app.tenant_id', true)::uuid. Prove with tests.  ￼
+
+Models (minimum)
+	•	Tenant(id, name, is_active, created_at)
+	•	ApiKey(id, tenant_id, key_hash, name, last_used_at, revoked_at, created_at)
+	•	Patient(..., custom_fields jsonb)
+	•	Appointment(..., custom_fields jsonb, start_utc timestamptz, end_utc timestamptz)
+
+Indexes
+	•	B-tree: (tenant_id), (tenant_id, document_number), (tenant_id, start_utc).
+	•	GIN on custom_fields for containment queries (@>). Prefer jsonb_path_ops where appropriate.  ￼
+	•	Remember: jsonb + GIN is powerful but not a doc-DB replacement—design queries accordingly.  ￼
+
+Migrations
+	•	Use Alembic; include SQL for enabling RLS and policies in migration scripts.

@@ -1,0 +1,19 @@
+---
+alwaysApply: false
+---
+Testing, CI, Docs
+
+Tests
+	•	Pytest with Postgres in Docker; fixtures create two tenants & two keys; assert cross-tenant denial via RLS.
+	•	Contract tests check OpenAPI examples.
+	•	Include performance sanity (list endpoints with typical filters).
+
+Tooling
+	•	Pre-commit: ruff/black/isort/mypy; coverage gate ≥85%.
+
+Docs
+	•	Keep README.md with docker compose up, migration commands, and example curl calls.
+	•	Endpoint examples must include X-Api-Key.
+
+Best-practice hints
+	•	Use FastAPI dependencies for validation/service wiring.  ￼
