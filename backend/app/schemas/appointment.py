@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, validator
 
 from app.schemas.base import ActionType, BaseSchema, EventType
+from app.schemas.validators import EnhancedValidators
 
 
 class AppointmentBaseSchema(BaseSchema):
@@ -40,21 +41,17 @@ class AppointmentCreateSchema(AppointmentBaseSchema):
     @validator('start_appointment', 'end_appointment')
     def validate_rfc3339_datetime(cls, v):
         """Validate RFC3339 datetime format."""
-        try:
-            # Parse RFC3339 format (supports both Z and offset)
-            if v.endswith('Z'):
-                return datetime.fromisoformat(v[:-1] + '+00:00')
-            else:
-                return datetime.fromisoformat(v)
-        except ValueError:
-            raise ValueError('Invalid RFC3339 datetime format')
+        return EnhancedValidators.validate_rfc3339_datetime(cls, v)
     
     @validator('end_utc')
-    def validate_end_after_start(cls, v, values):
-        """Validate that end time is after start time."""
-        if 'start_utc' in values and v <= values['start_utc']:
-            raise ValueError('End time must be after start time')
-        return v
+    def validate_appointment_datetime(cls, v, values):
+        """Validate appointment datetime constraints."""
+        return EnhancedValidators.validate_appointment_datetime(cls, v, values)
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        return EnhancedValidators.validate_custom_fields(cls, v)
 
 
 class AppointmentUpdateSchema(BaseSchema):
@@ -84,21 +81,22 @@ class AppointmentUpdateSchema(BaseSchema):
     @validator('start_appointment', 'end_appointment')
     def validate_rfc3339_datetime(cls, v):
         """Validate RFC3339 datetime format."""
-        if v is None:
-            return v
-        try:
-            if v.endswith('Z'):
-                return datetime.fromisoformat(v[:-1] + '+00:00')
-            else:
-                return datetime.fromisoformat(v)
-        except ValueError:
-            raise ValueError('Invalid RFC3339 datetime format')
+        if v is not None:
+            return EnhancedValidators.validate_rfc3339_datetime(cls, v)
+        return v
     
     @validator('end_utc')
-    def validate_end_after_start(cls, v, values):
-        """Validate that end time is after start time."""
-        if v and 'start_utc' in values and values['start_utc'] and v <= values['start_utc']:
-            raise ValueError('End time must be after start time')
+    def validate_appointment_datetime(cls, v, values):
+        """Validate appointment datetime constraints."""
+        if v is not None and 'start_utc' in values and values['start_utc']:
+            return EnhancedValidators.validate_appointment_datetime(cls, v, values)
+        return v
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        if v is not None:
+            return EnhancedValidators.validate_custom_fields(cls, v)
         return v
 
 

@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, validator
 
 from app.schemas.base import ActionType, BaseSchema, CustomFieldsSchema, EventType
+from app.schemas.validators import EnhancedValidators
 
 
 class PatientBaseSchema(BaseSchema):
@@ -34,19 +35,35 @@ class PatientCreateSchema(PatientBaseSchema):
     event_type: EventType = Field(EventType.PATIENT, description="Event type")
     action_type: ActionType = Field(ActionType.CREATE, description="Action type")
     
+    @validator('document_number')
+    def validate_document_number(cls, v, values):
+        """Validate document number based on document type."""
+        return EnhancedValidators.validate_document_number(cls, v, values)
+    
+    @validator('phone')
+    def validate_phone(cls, v):
+        """Validate phone number format."""
+        return EnhancedValidators.validate_phone(cls, v)
+    
+    @validator('cell_phone')
+    def validate_cell_phone(cls, v):
+        """Validate cell phone number format."""
+        return EnhancedValidators.validate_cell_phone(cls, v)
+    
     @validator('email')
     def validate_email(cls, v):
-        """Validate email format if provided."""
-        if v and '@' not in v:
-            raise ValueError('Invalid email format')
-        return v
+        """Validate email format."""
+        return EnhancedValidators.validate_email(cls, v)
     
-    @validator('phone', 'cell_phone')
-    def validate_phone(cls, v):
-        """Validate phone format if provided."""
-        if v and not v.replace('+', '').replace('-', '').replace(' ', '').isdigit():
-            raise ValueError('Invalid phone format')
-        return v
+    @validator('birth_date')
+    def validate_birth_date(cls, v):
+        """Validate birth date."""
+        return EnhancedValidators.validate_birth_date(cls, v)
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        return EnhancedValidators.validate_custom_fields(cls, v)
 
 
 class PatientUpdateSchema(BaseSchema):
@@ -70,18 +87,32 @@ class PatientUpdateSchema(BaseSchema):
     habeas_data: Optional[bool] = None
     custom_fields: Optional[Dict[str, Any]] = None
     
-    @validator('email')
-    def validate_email(cls, v):
-        """Validate email format if provided."""
-        if v and '@' not in v:
-            raise ValueError('Invalid email format')
+    @validator('phone')
+    def validate_phone(cls, v):
+        """Validate phone number format."""
+        if v is not None:
+            return EnhancedValidators.validate_phone(cls, v)
         return v
     
-    @validator('phone', 'cell_phone')
-    def validate_phone(cls, v):
-        """Validate phone format if provided."""
-        if v and not v.replace('+', '').replace('-', '').replace(' ', '').isdigit():
-            raise ValueError('Invalid phone format')
+    @validator('cell_phone')
+    def validate_cell_phone(cls, v):
+        """Validate cell phone number format."""
+        if v is not None:
+            return EnhancedValidators.validate_cell_phone(cls, v)
+        return v
+    
+    @validator('email')
+    def validate_email(cls, v):
+        """Validate email format."""
+        if v is not None:
+            return EnhancedValidators.validate_email(cls, v)
+        return v
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        if v is not None:
+            return EnhancedValidators.validate_custom_fields(cls, v)
         return v
 
 
