@@ -22,11 +22,32 @@ migrate-create: ## Create a new migration
 seed: ## Seed the database with sample data
 	docker-compose exec api python scripts/create_tenant_and_apikey.py
 
-test: ## Run tests
+test: ## Run all tests with Docker
 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
 
-test-local: ## Run tests locally
-	pytest tests/ -v
+test-local: ## Run tests locally (requires local DB)
+	pytest tests/ -v --tb=short
+
+test-unit: ## Run unit tests only
+	pytest tests/ -v -m "unit" --tb=short
+
+test-integration: ## Run integration tests only
+	pytest tests/ -v -m "integration" --tb=short
+
+test-auth: ## Run authentication tests only
+	pytest tests/ -v -m "auth" --tb=short
+
+test-rls: ## Run RLS tests only
+	pytest tests/ -v -m "rls" --tb=short
+
+test-api: ## Run API tests only
+	pytest tests/ -v -m "api" --tb=short
+
+test-coverage: ## Run tests with coverage report
+	pytest tests/ -v --cov=backend/app --cov-report=html --cov-report=term-missing
+
+test-watch: ## Run tests in watch mode
+	pytest tests/ -v --tb=short -f
 
 clean: ## Clean up containers and volumes
 	docker-compose down -v

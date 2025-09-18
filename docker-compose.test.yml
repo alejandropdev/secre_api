@@ -1,28 +1,35 @@
 version: '3.8'
 
 services:
-  db_test:
+  test-db:
     image: postgres:16
     environment:
-      POSTGRES_DB: secre_db_test
-      POSTGRES_USER: secre
-      POSTGRES_PASSWORD: secre
+      POSTGRES_DB: secre_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
       - "5433:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U secre -d secre_db_test"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  api_test:
+  test-api:
     build: .
+    command: pytest tests/ -v --tb=short
     environment:
-      - DATABASE_URL=postgresql://secre:secre@db_test:5432/secre_db_test
-      - ENVIRONMENT=test
-      - DEBUG=true
-      - LOG_LEVEL=DEBUG
+      - TEST_DATABASE_URL=postgresql+asyncpg://postgres:password@test-db:5432/secre_test
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@test-db:5432/secre_test
+      - LOG_LEVEL=WARNING
     depends_on:
-      db_test:
+      test-db:
         condition: service_healthy
-    command: pytest tests/ -v
+    volumes:
+      - .:/app
+    working_dir: /app
+
+volumes:
+  test_db_data:
