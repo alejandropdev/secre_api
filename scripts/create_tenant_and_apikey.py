@@ -3,6 +3,7 @@
 
 import asyncio
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 # Add the backend directory to the Python path
@@ -13,6 +14,8 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 from app.services.api_key_service import ApiKeyService
+from app.services.appointment_service import AppointmentService
+from app.services.patient_service import PatientService
 from app.services.tenant_service import TenantService
 
 
@@ -55,8 +58,58 @@ async def create_demo_data():
         print(f"API Key (save this securely): {plaintext_key}")
         print(f"API Key Hash: {api_key.key_hash}")
         
+        # Create sample patient
+        print("\nCreating sample patient...")
+        patient_service = PatientService(db)
+        patient = await patient_service.create_patient(
+            tenant_id=tenant.id,
+            first_name="Juan",
+            first_last_name="Pérez",
+            birth_date=date(1985, 5, 15),
+            gender_id=1,  # Male
+            document_type_id=1,  # CC
+            document_number="12345678",
+            email="juan.perez@example.com",
+            phone="+57-1-234-5678",
+            cell_phone="+57-300-123-4567",
+            eps_id="EPS001",
+            habeas_data=True,
+            custom_fields={
+                "emergency_contact": "María Pérez - +57-300-987-6543",
+                "allergies": ["Penicilina", "Polen"],
+                "medical_conditions": ["Hipertensión"],
+            }
+        )
+        print(f"Created patient: {patient.first_name} {patient.first_last_name} (ID: {patient.id})")
+        
+        # Create sample appointment
+        print("Creating sample appointment...")
+        appointment_service = AppointmentService(db)
+        appointment = await appointment_service.create_appointment(
+            tenant_id=tenant.id,
+            start_utc=datetime(2024, 2, 15, 10, 0, 0),
+            end_utc=datetime(2024, 2, 15, 11, 0, 0),
+            patient_document_type_id=1,
+            patient_document_number="12345678",
+            doctor_document_type_id=1,
+            doctor_document_number="87654321",
+            modality="IN_PERSON",
+            state="SCHEDULED",
+            appointment_type="CONSULTATION",
+            clinic_id="CLINIC001",
+            comment="Consulta de seguimiento",
+            custom_fields={
+                "room_number": "A-101",
+                "specialty": "Cardiología",
+                "priority": "Normal",
+            }
+        )
+        print(f"Created appointment: {appointment.id} for {appointment.start_utc}")
+        
         print("\nDemo data created successfully!")
         print(f"Use this API key in the X-Api-Key header: {plaintext_key}")
+        print(f"Sample patient document: {patient.document_number}")
+        print(f"Sample appointment ID: {appointment.id}")
     
     await engine.dispose()
 
