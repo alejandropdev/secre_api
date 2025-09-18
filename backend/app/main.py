@@ -5,7 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
+from app.core.exceptions import (
+    BaseAPIException,
+    api_exception_handler,
+    general_exception_handler,
+    http_exception_handler,
+)
 from app.core.logging import setup_logging
+from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.rls import RLSMiddleware
 
 # Setup logging
@@ -21,7 +28,8 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Add middleware
+# Add middleware (order matters - first added is outermost)
+app.add_middleware(RequestIDMiddleware)
 app.add_middleware(RLSMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +38,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add exception handlers
+app.add_exception_handler(BaseAPIException, api_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # Include API routers
 app.include_router(api_v1_router)

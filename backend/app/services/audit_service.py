@@ -100,3 +100,30 @@ class AuditService:
         
         result = await self.db.execute(query)
         return result.scalars().all()
+    
+    async def log_action_with_context(
+        self,
+        resource_type: str,
+        resource_id: UUID,
+        action: str,
+        before_snapshot: Optional[Dict[str, Any]] = None,
+        after_snapshot: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None,
+    ) -> AuditLog:
+        """Log an action with automatic request context extraction."""
+        
+        if not request_context:
+            request_context = {}
+        
+        return await self.log_action(
+            tenant_id=request_context.get("tenant_id"),
+            resource_type=resource_type,
+            resource_id=resource_id,
+            action=action,
+            api_key_id=request_context.get("api_key_id"),
+            before_snapshot=before_snapshot,
+            after_snapshot=after_snapshot,
+            request_id=request_context.get("request_id"),
+            ip_address=request_context.get("ip_address"),
+            user_agent=request_context.get("user_agent"),
+        )

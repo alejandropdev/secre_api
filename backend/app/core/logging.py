@@ -3,7 +3,7 @@
 import json
 import logging
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.core.config import settings
 
@@ -32,12 +32,31 @@ class JSONFormatter(logging.Formatter):
             log_entry["status_code"] = record.status_code
         if hasattr(record, "latency"):
             log_entry["latency"] = record.latency
+        if hasattr(record, "trace_id"):
+            log_entry["trace_id"] = record.trace_id
+        if hasattr(record, "api_key_id"):
+            log_entry["api_key_id"] = record.api_key_id
         
         # Add exception info if present
         if record.exc_info:
             log_entry["exception"] = self.formatException(record.exc_info)
         
         return json.dumps(log_entry)
+
+
+class ContextualLoggerAdapter(logging.LoggerAdapter):
+    """Logger adapter that adds request context to all log messages."""
+    
+    def __init__(self, logger: logging.Logger, extra: Optional[Dict[str, Any]] = None):
+        super().__init__(logger, extra or {})
+    
+    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+        """Add context to log messages."""
+        extra = kwargs.get("extra", {})
+        if self.extra:
+            extra.update(self.extra)
+        kwargs["extra"] = extra
+        return msg, kwargs
 
 
 def setup_logging() -> None:

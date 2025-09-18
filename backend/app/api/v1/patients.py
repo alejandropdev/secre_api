@@ -4,10 +4,11 @@ import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Request, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.dependencies import get_logger, get_request_context
 from app.db.session import get_db
 from app.middleware.auth import TenantContext, get_current_tenant
 from app.schemas.patient import (
@@ -19,7 +20,6 @@ from app.schemas.patient import (
     PatientUpdateSchema,
 )
 from app.schemas.pagination import PaginatedResponse
-from app.services.audit_service import AuditService
 from app.services.patient_service import PatientService
 from app.utils.schema_conversion import convert_patients_to_response_list
 
@@ -31,27 +31,17 @@ router = APIRouter(prefix=f"{settings.api_v1_prefix}/patients", tags=["Patients"
 @router.post("/", response_model=PatientResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_patient(
     patient_data: PatientCreateSchema,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_tenant: TenantContext = Depends(get_current_tenant),
+    request_context: dict = Depends(get_request_context),
+    logger: logging.Logger = Depends(get_logger),
 ):
     """Create a new patient."""
     
     patient_service = PatientService(db)
-    audit_service = AuditService(db)
     
-    # Check if patient with same document already exists
-    existing_patient = await patient_service.get_patient_by_document(
-        document_type_id=patient_data.document_type_id,
-        document_number=patient_data.document_number
-    )
-    
-    if existing_patient:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Patient with this document already exists"
-        )
-    
-    # Create patient
+    # Create patient with enhanced error handling
     patient = await patient_service.create_patient(
         tenant_id=UUID(current_tenant.tenant_id),
         first_name=patient_data.first_name,
@@ -68,19 +58,10 @@ async def create_patient(
         eps_id=patient_data.eps_id,
         habeas_data=patient_data.habeas_data,
         custom_fields=patient_data.custom_fields,
+        request_context=request_context,
     )
     
-    # Log audit trail
-    await audit_service.log_action(
-        tenant_id=UUID(current_tenant.tenant_id),
-        resource_type="patient",
-        resource_id=patient.id,
-        action="create",
-        api_key_id=UUID(current_tenant.api_key_id),
-        after_snapshot=patient_data.dict(),
-    )
-    
-    logger.info(f"Created patient {patient.id} for tenant {current_tenant.tenant_id}")
+    logger.info(f"Successfully created patient {patient.id}")
     
     return convert_patients_to_response_list([patient])[0]
 
