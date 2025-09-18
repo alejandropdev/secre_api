@@ -13,30 +13,144 @@ from app.schemas.validators import EnhancedValidators
 class AppointmentBaseSchema(BaseSchema):
     """Base appointment schema with common fields."""
     
-    start_utc: datetime = Field(..., description="Appointment start time in UTC")
-    end_utc: datetime = Field(..., description="Appointment end time in UTC")
-    patient_document_type_id: int = Field(..., description="Patient document type ID")
-    patient_document_number: str = Field(..., min_length=1, max_length=50, description="Patient document number")
-    doctor_document_type_id: int = Field(..., description="Doctor document type ID")
-    doctor_document_number: str = Field(..., min_length=1, max_length=50, description="Doctor document number")
-    modality: str = Field(..., min_length=1, max_length=50, description="Appointment modality")
-    state: str = Field(..., min_length=1, max_length=50, description="Appointment state")
-    notification_state: Optional[str] = Field(None, max_length=50, description="Notification state")
-    appointment_type: Optional[str] = Field(None, max_length=100, description="Appointment type")
-    clinic_id: Optional[str] = Field(None, max_length=100, description="Clinic ID")
-    comment: Optional[str] = Field(None, description="Appointment comment")
-    custom_fields: Dict[str, Any] = Field(default_factory=dict, description="Custom tenant-specific fields")
+    start_utc: datetime = Field(
+        ..., 
+        description="Hora de inicio de la cita en UTC",
+        example="2024-01-15T15:00:00Z"
+    )
+    end_utc: datetime = Field(
+        ..., 
+        description="Hora de finalización de la cita en UTC",
+        example="2024-01-15T16:00:00Z"
+    )
+    patient_document_type_id: int = Field(
+        ..., 
+        description="ID del tipo de documento del paciente",
+        example=1
+    )
+    patient_document_number: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=50, 
+        description="Número de documento del paciente",
+        example="12345678"
+    )
+    doctor_document_type_id: int = Field(
+        ..., 
+        description="ID del tipo de documento del médico",
+        example=1
+    )
+    doctor_document_number: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=50, 
+        description="Número de documento del médico",
+        example="87654321"
+    )
+    modality: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=50, 
+        description="Modalidad de la cita (presencial, virtual, telemedicina, domicilio)",
+        example="presencial"
+    )
+    state: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=50, 
+        description="Estado de la cita (scheduled, confirmed, cancelled, completed)",
+        example="scheduled"
+    )
+    notification_state: Optional[str] = Field(
+        None, 
+        max_length=50, 
+        description="Estado de notificación (pending, sent, failed)",
+        example="pending"
+    )
+    appointment_type: Optional[str] = Field(
+        None, 
+        max_length=100, 
+        description="Tipo de cita (consulta_general, especialista, control, urgencia)",
+        example="consulta_general"
+    )
+    clinic_id: Optional[str] = Field(
+        None, 
+        max_length=100, 
+        description="ID de la clínica o consultorio",
+        example="CLINIC001"
+    )
+    comment: Optional[str] = Field(
+        None, 
+        description="Comentarios adicionales sobre la cita",
+        example="Consulta de rutina - paciente alérgico a penicilina"
+    )
+    custom_fields: Dict[str, Any] = Field(
+        default_factory=dict, 
+        description="Campos personalizados específicos del inquilino para información adicional de la cita",
+        example={
+            "room": "A101",
+            "specialInstructions": "Paciente alérgico a penicilina",
+            "insurance": {
+                "provider": "EPS001",
+                "policyNumber": "POL123456"
+            }
+        }
+    )
 
 
 class AppointmentCreateSchema(AppointmentBaseSchema):
     """Schema for creating an appointment (matches client payload)."""
     
-    event_type: EventType = Field(EventType.APPOINTMENT, description="Event type")
-    action_type: ActionType = Field(ActionType.CREATE, description="Action type")
+    event_type: EventType = Field(
+        EventType.APPOINTMENT, 
+        description="Tipo de evento - debe ser 'APPOINTMENT' para operaciones de cita",
+        example="APPOINTMENT"
+    )
+    action_type: ActionType = Field(
+        ActionType.CREATE, 
+        description="Tipo de acción - debe ser 'CREATE' para crear una nueva cita",
+        example="CREATE"
+    )
     
     # RFC3339 format fields for client compatibility
-    start_appointment: str = Field(..., description="Start appointment in RFC3339 format")
-    end_appointment: str = Field(..., description="End appointment in RFC3339 format")
+    start_appointment: str = Field(
+        ..., 
+        description="Hora de inicio de la cita en formato RFC3339 con zona horaria",
+        example="2024-01-15T10:00:00-05:00"
+    )
+    end_appointment: str = Field(
+        ..., 
+        description="Hora de finalización de la cita en formato RFC3339 con zona horaria",
+        example="2024-01-15T11:00:00-05:00"
+    )
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "eventType": "APPOINTMENT",
+                "actionType": "CREATE",
+                "startAppointment": "2024-01-15T10:00:00-05:00",
+                "endAppointment": "2024-01-15T11:00:00-05:00",
+                "patientDocumentTypeId": 1,
+                "patientDocumentNumber": "12345678",
+                "doctorDocumentTypeId": 1,
+                "doctorDocumentNumber": "87654321",
+                "modality": "presencial",
+                "state": "scheduled",
+                "notificationState": "pending",
+                "appointmentType": "consulta_general",
+                "clinicId": "CLINIC001",
+                "comment": "Consulta de rutina - paciente alérgico a penicilina",
+                "customFields": {
+                    "room": "A101",
+                    "specialInstructions": "Paciente alérgico a penicilina",
+                    "insurance": {
+                        "provider": "EPS001",
+                        "policyNumber": "POL123456"
+                    }
+                }
+            }
+        }
     
     @validator('start_appointment', 'end_appointment')
     def validate_rfc3339_datetime(cls, v):

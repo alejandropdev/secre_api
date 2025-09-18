@@ -60,7 +60,37 @@ class TenantContextSchema(BaseModel):
 class ErrorResponseSchema(BaseModel):
     """Schema for error responses."""
     
-    error: str
-    detail: Optional[str] = None
-    trace_id: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    error: str = Field(..., description="Mensaje de error principal", example="Validation error")
+    detail: Optional[str] = Field(None, description="Detalles adicionales del error", example="Patient with document 12345678 already exists")
+    trace_id: Optional[str] = Field(None, description="ID de trazabilidad para debugging", example="550e8400-e29b-41d4-a716-446655440000")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp del error en formato ISO 8601 UTC", example="2024-01-15T10:30:00Z")
+    field: Optional[str] = Field(None, description="Campo específico que causó el error de validación", example="document_number")
+    
+    class Config:
+        schema_extra = {
+            "examples": {
+                "validation_error": {
+                    "error": "Validation error",
+                    "detail": "Patient with document 12345678 already exists",
+                    "trace_id": "550e8400-e29b-41d4-a716-446655440001",
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "field": "document_number"
+                },
+                "not_found_error": {
+                    "error": "Patient 550e8400-e29b-41d4-a716-446655440000 not found",
+                    "trace_id": "550e8400-e29b-41d4-a716-446655440002",
+                    "timestamp": "2024-01-15T10:30:00Z"
+                },
+                "unauthorized_error": {
+                    "error": "API key required. Provide X-Api-Key header.",
+                    "trace_id": "550e8400-e29b-41d4-a716-446655440003",
+                    "timestamp": "2024-01-15T10:30:00Z"
+                },
+                "internal_error": {
+                    "error": "Internal server error",
+                    "detail": "An unexpected error occurred",
+                    "trace_id": "550e8400-e29b-41d4-a716-446655440004",
+                    "timestamp": "2024-01-15T10:30:00Z"
+                }
+            }
+        }

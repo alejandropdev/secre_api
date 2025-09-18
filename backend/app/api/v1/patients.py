@@ -28,7 +28,90 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix=f"{settings.api_v1_prefix}/patients", tags=["Patients"])
 
 
-@router.post("/", response_model=PatientResponseSchema, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", 
+    response_model=PatientResponseSchema, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear Paciente",
+    description="""
+    Crea un nuevo paciente en el sistema.
+    
+    **Validaciones:**
+    - El número de documento debe ser único por inquilino
+    - Los campos obligatorios deben estar presentes
+    - El formato de fecha debe ser YYYY-MM-DD
+    - Los números de teléfono se normalizan automáticamente
+    
+    **Campos Personalizados:**
+    - Se pueden incluir campos adicionales específicos del inquilino
+    - Los campos personalizados se almacenan como JSONB
+    - No hay restricciones en la estructura de campos personalizados
+    
+    **Auditoría:**
+    - Se registra automáticamente la creación del paciente
+    - Se incluye información del API Key utilizado
+    - Se captura el contexto de la solicitud
+    """,
+    responses={
+        201: {
+            "description": "Paciente creado exitosamente",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "tenantId": "550e8400-e29b-41d4-a716-446655440001",
+                        "firstName": "Juan",
+                        "secondName": "Carlos",
+                        "firstLastName": "Pérez",
+                        "secondLastName": "González",
+                        "birthDate": "1990-05-15",
+                        "genderId": 1,
+                        "documentTypeId": 1,
+                        "documentNumber": "12345678",
+                        "phone": "+57-1-234-5678",
+                        "cellPhone": "+57-300-123-4567",
+                        "email": "juan.perez@example.com",
+                        "epsId": "EPS001",
+                        "habeasData": True,
+                        "customFields": {
+                            "emergencyContact": "María González",
+                            "emergencyPhone": "+57-300-987-6543"
+                        },
+                        "createdAt": "2024-01-15T10:30:00Z",
+                        "updatedAt": "2024-01-15T10:30:00Z"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Error de validación",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": "Validation error",
+                        "detail": "Patient with document 12345678 already exists",
+                        "trace_id": "550e8400-e29b-41d4-a716-446655440002",
+                        "timestamp": "2024-01-15T10:30:00Z",
+                        "field": "document_number"
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "No autorizado - API Key requerida",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": "API key required. Provide X-Api-Key header.",
+                        "trace_id": "550e8400-e29b-41d4-a716-446655440003",
+                        "timestamp": "2024-01-15T10:30:00Z"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Pacientes"]
+)
 async def create_patient(
     patient_data: PatientCreateSchema,
     request: Request,
@@ -66,7 +149,81 @@ async def create_patient(
     return convert_patients_to_response_list([patient])[0]
 
 
-@router.get("/{patient_id}", response_model=PatientResponseSchema)
+@router.get(
+    "/{patient_id}", 
+    response_model=PatientResponseSchema,
+    summary="Obtener Paciente",
+    description="""
+    Obtiene un paciente específico por su ID.
+    
+    **Aislamiento de Datos:**
+    - Solo se puede acceder a pacientes del inquilino autenticado
+    - Los pacientes de otros inquilinos no son visibles
+    - Se aplica Row-Level Security (RLS) a nivel de base de datos
+    
+    **Respuesta:**
+    - Incluye todos los campos del paciente
+    - Los campos personalizados se devuelven tal como se almacenaron
+    - Se incluyen metadatos de auditoría (fechas de creación/actualización)
+    """,
+    responses={
+        200: {
+            "description": "Paciente encontrado exitosamente",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "tenantId": "550e8400-e29b-41d4-a716-446655440001",
+                        "firstName": "Juan",
+                        "secondName": "Carlos",
+                        "firstLastName": "Pérez",
+                        "secondLastName": "González",
+                        "birthDate": "1990-05-15",
+                        "genderId": 1,
+                        "documentTypeId": 1,
+                        "documentNumber": "12345678",
+                        "phone": "+57-1-234-5678",
+                        "cellPhone": "+57-300-123-4567",
+                        "email": "juan.perez@example.com",
+                        "epsId": "EPS001",
+                        "habeasData": True,
+                        "customFields": {
+                            "emergencyContact": "María González",
+                            "emergencyPhone": "+57-300-987-6543"
+                        },
+                        "createdAt": "2024-01-15T10:30:00Z",
+                        "updatedAt": "2024-01-15T10:30:00Z"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Paciente no encontrado",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": "Patient 550e8400-e29b-41d4-a716-446655440000 not found",
+                        "trace_id": "550e8400-e29b-41d4-a716-446655440004",
+                        "timestamp": "2024-01-15T10:30:00Z"
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "No autorizado - API Key requerida",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": "API key required. Provide X-Api-Key header.",
+                        "trace_id": "550e8400-e29b-41d4-a716-446655440005",
+                        "timestamp": "2024-01-15T10:30:00Z"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Pacientes"]
+)
 async def get_patient(
     patient_id: UUID,
     db: AsyncSession = Depends(get_db),
