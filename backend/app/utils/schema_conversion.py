@@ -186,3 +186,23 @@ def convert_api_keys_to_response_list(api_keys: List[ApiKey]) -> List[ApiKeyResp
 def convert_audit_logs_to_response_list(audit_logs: List[AuditLog]) -> List[AuditLogResponseSchema]:
     """Convert list of AuditLog models to list of AuditLogResponseSchema."""
     return [convert_audit_log_to_response(audit_log) for audit_log in audit_logs]
+
+
+def convert_document_types_to_schema_list(document_types: List[DocumentType]) -> List[DocumentTypeSchema]:
+    """Convert list of DocumentType models to list of DocumentTypeSchema."""
+    return [convert_document_type_to_schema(doc_type) for doc_type in document_types]
+
+
+def convert_genders_to_schema_list(genders: List[Gender]) -> List[GenderSchema]:
+    """Convert list of Gender models to list of GenderSchema."""
+    return [convert_gender_to_schema(gender) for gender in genders]
+
+
+def convert_appointment_modalities_to_schema_list(modalities: List[AppointmentModality]) -> List[AppointmentModalitySchema]:
+    """Convert list of AppointmentModality models to list of AppointmentModalitySchema."""
+    return [convert_appointment_modality_to_schema(modality) for modality in modalities]
+
+
+def convert_appointment_states_to_schema_list(states: List[AppointmentState]) -> List[AppointmentStateSchema]:
+    """Convert list of AppointmentState models to list of AppointmentStateSchema."""
+    return [convert_appointment_state_to_schema(state) for state in states]
