@@ -36,6 +36,7 @@ async def get_api_key_from_header(request: Request) -> Optional[str]:
 
 
 async def verify_api_key_and_get_tenant(
+    request: Request,
     api_key: str = Depends(get_api_key_from_header),
     db: AsyncSession = Depends(get_db),
 ) -> TenantContext:

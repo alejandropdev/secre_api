@@ -41,10 +41,13 @@ AsyncSessionLocal = sessionmaker(
 @event.listens_for(async_engine.sync_engine, "connect")
 def set_rls_context(dbapi_connection, connection_record):
     """Set up RLS context for each database connection."""
-    with dbapi_connection.cursor() as cursor:
+    cursor = dbapi_connection.cursor()
+    try:
         # Enable RLS and set up the app schema
         cursor.execute("SET search_path TO public, app;")
         cursor.execute("SET row_security = on;")
+    finally:
+        cursor.close()
 
 
 async def get_db() -> AsyncSession:

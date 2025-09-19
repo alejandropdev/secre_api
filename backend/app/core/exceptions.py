@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, Request, status
@@ -221,6 +222,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         error="Internal server error",
         detail="An unexpected error occurred",
         trace_id=trace_id,
+        timestamp=datetime.utcnow().isoformat(),
     )
     
     return JSONResponse(

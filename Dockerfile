@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY backend/ ./backend/
+COPY alembic/ ./alembic/
+COPY scripts/ ./scripts/
+COPY alembic.ini .
 
 # Set Python path
 ENV PYTHONPATH=/app/backend

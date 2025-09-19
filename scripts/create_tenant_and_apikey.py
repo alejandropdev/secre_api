@@ -78,6 +78,11 @@ async def create_demo_data():
                 "emergency_contact": "María Pérez - +57-300-987-6543",
                 "allergies": ["Penicilina", "Polen"],
                 "medical_conditions": ["Hipertensión"],
+            },
+            request_context={
+                "tenant_id": str(tenant.id),
+                "api_key_id": str(api_key.id),
+                "request_id": "demo-seed-script"
             }
         )
         print(f"Created patient: {patient.first_name} {patient.first_last_name} (ID: {patient.id})")
@@ -102,6 +107,11 @@ async def create_demo_data():
                 "room_number": "A-101",
                 "specialty": "Cardiología",
                 "priority": "Normal",
+            },
+            request_context={
+                "tenant_id": str(tenant.id),
+                "api_key_id": str(api_key.id),
+                "request_id": "demo-seed-script"
             }
         )
         print(f"Created appointment: {appointment.id} for {appointment.start_utc}")
