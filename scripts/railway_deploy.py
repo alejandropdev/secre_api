@@ -13,6 +13,26 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
+def check_dependencies():
+    """Check if required dependencies are available."""
+    try:
+        import psycopg2
+        import sqlalchemy
+        import alembic
+        return True
+    except ImportError as e:
+        print(f"❌ Missing dependency: {e}")
+        print("This script should be run in the Railway environment where dependencies are installed.")
+        return False
+
+# Check dependencies first
+if not check_dependencies():
+    print("\n💡 To run this script:")
+    print("1. Use Railway CLI: railway run python scripts/railway_deploy.py")
+    print("2. Or use Railway dashboard shell")
+    print("3. Or run manually in Railway environment")
+    sys.exit(1)
+
 from app.core.config import settings
 from app.db.session import sync_engine
 from alembic.config import Config

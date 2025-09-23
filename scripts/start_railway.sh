@@ -8,7 +8,7 @@ export PORT=${PORT:-8000}
 
 # Run database migrations
 echo "📊 Running database migrations..."
-python scripts/railway_deploy.py
+python scripts/simple_migrate.py
 
 # Start the application
 echo "🌐 Starting FastAPI application on port $PORT..."

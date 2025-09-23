@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 # Context variable for tenant ID
 tenant_context: ContextVar[Optional[str]] = ContextVar("tenant_context", default=None)
 
-# Create sync engine for migrations
+# Create sync engine for migrations (uses psycopg2)
 sync_engine = create_engine(
     settings.effective_database_url,
     pool_pre_ping=True,
     echo=settings.debug,
 )
 
-# Create async engine for application
+# Create async engine for application (uses asyncpg)
 async_engine = create_async_engine(
     settings.effective_database_url.replace("postgresql://", "postgresql+asyncpg://"),
     pool_pre_ping=True,
