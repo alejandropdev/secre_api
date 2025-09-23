@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development
+.env
+.env.local
+.env.development
+.env.test
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# AWS (not needed for Railway)
+aws/
+
+# Examples
+examples/
+
+# Scripts (keep only essential ones)
+scripts/
+!scripts/init_db.sql
+
+# Tests
+tests/
+
+# Specs
+specs/

@@ -17,14 +17,14 @@ tenant_context: ContextVar[Optional[str]] = ContextVar("tenant_context", default
 
 # Create sync engine for migrations
 sync_engine = create_engine(
-    settings.database_url,
+    settings.effective_database_url,
     pool_pre_ping=True,
     echo=settings.debug,
 )
 
 # Create async engine for application
 async_engine = create_async_engine(
-    settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
+    settings.effective_database_url.replace("postgresql://", "postgresql+asyncpg://"),
     pool_pre_ping=True,
     echo=settings.debug,
 )

@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://secre:secre@localhost:5432/secre_db"
     database_url_test: str = "postgresql://secre:secre@localhost:5433/secre_db_test"
     
+    # Railway will provide DATABASE_URL environment variable
+    @property
+    def effective_database_url(self) -> str:
+        """Get the effective database URL, preferring Railway's DATABASE_URL."""
+        return os.getenv("DATABASE_URL", self.database_url)
+    
     # API
     api_v1_prefix: str = "/v1"
     project_name: str = "Secre API"
@@ -30,6 +36,12 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     debug: bool = True
+    
+    # Railway port configuration
+    @property
+    def port(self) -> int:
+        """Get the port from Railway's PORT environment variable."""
+        return int(os.getenv("PORT", "8000"))
     
     class Config:
         env_file = ".env"
