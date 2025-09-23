@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    master_api_key: str = "hPoRkL0mz91Ui3sPTsFflbBUPvpHC67TdNC4ytGw19evzSRRlfn9To8LmL89b5wP"
     
     # Logging
     log_level: str = "INFO"

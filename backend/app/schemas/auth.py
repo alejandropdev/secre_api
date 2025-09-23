@@ -88,3 +88,11 @@ class TenantListResponseSchema(BaseSchema):
     size: int
     has_next: bool
     has_prev: bool
+
+
+class TenantCreateWithApiKeyResponseSchema(BaseSchema):
+    """Schema for tenant creation response that includes the API key."""
+    
+    tenant: TenantResponseSchema
+    api_key: ApiKeyResponseSchema
+    plaintext_key: str = Field(..., description="Plaintext API key (save securely)")

@@ -21,20 +21,6 @@ startup_time = time.time()
 
 
 @router.get("/", response_model=HealthCheckSchema)
-async def health_check():
-    """Basic health check endpoint."""
-    
-    uptime = time.time() - startup_time
-    
-    return HealthCheckSchema(
-        status="healthy",
-        version=settings.version,
-        timestamp=datetime.utcnow(),
-        uptime=uptime,
-    )
-
-
-@router.get("/detailed", response_model=HealthCheckSchema)
 async def detailed_health_check(
     db: AsyncSession = Depends(get_db),
 ):
@@ -61,14 +47,3 @@ async def detailed_health_check(
     )
 
 
-@router.get("/info", response_model=ServiceInfoSchema)
-async def service_info():
-    """Get service information."""
-    
-    return ServiceInfoSchema(
-        name=settings.project_name,
-        version=settings.version,
-        description="Multi-tenant Medical Integration API",
-        docs_url="/docs",
-        health_url=f"{settings.api_v1_prefix}/health",
-    )

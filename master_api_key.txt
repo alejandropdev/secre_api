@@ -1,0 +1,7 @@
+Master API Key: hPoRkL0mz91Ui3sPTsFflbBUPvpHC67TdNC4ytGw19evzSRRlfn9To8LmL89b5wP
+Generated at: 2025-09-23T11:54:14.671196
+
+Use this key in the X-Api-Key header for admin operations.
+Example: curl -H 'X-Api-Key: {master_key}' http://localhost:8000/v1/admin/tenants
+Tenant API Key: cRLFhaNU22njJ-Gw_N-E5_rjDlH7GQnx0axKGSwBpmk
+Miguel Parrado API Key: uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc

@@ -131,7 +131,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
     
     # Get request context
     request_id = getattr(request.state, "request_id", None)
-    tenant_id = getattr(request.state, "tenant_context", {}).get("tenant_id") if hasattr(request.state, "tenant_context") else None
+    tenant_id = getattr(request.state, "tenant_context", None).tenant_id if getattr(request.state, "tenant_context", None) else None
     
     # Log the error
     logger.error(
@@ -152,7 +152,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
         error=exc.message,
         detail=exc.detail,
         trace_id=exc.trace_id,
-        timestamp=exc.timestamp if hasattr(exc, 'timestamp') else None,
+        timestamp=exc.timestamp if hasattr(exc, 'timestamp') and exc.timestamp else datetime.utcnow().isoformat(),
         field=getattr(exc, 'field', None),
     )
     
@@ -167,7 +167,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     
     # Get request context
     request_id = getattr(request.state, "request_id", None)
-    tenant_id = getattr(request.state, "tenant_context", {}).get("tenant_id") if hasattr(request.state, "tenant_context") else None
+    tenant_id = getattr(request.state, "tenant_context", None).tenant_id if getattr(request.state, "tenant_context", None) else None
     trace_id = str(uuid.uuid4())
     
     # Log the error
@@ -200,7 +200,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     
     # Get request context
     request_id = getattr(request.state, "request_id", None)
-    tenant_id = getattr(request.state, "tenant_context", {}).get("tenant_id") if hasattr(request.state, "tenant_context") else None
+    tenant_id = getattr(request.state, "tenant_context", None).tenant_id if getattr(request.state, "tenant_context", None) else None
     trace_id = str(uuid.uuid4())
     
     # Log the error

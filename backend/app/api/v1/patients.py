@@ -4,7 +4,7 @@ import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Query, status
+from fastapi import APIRouter, Depends, Request, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -18,8 +18,10 @@ from app.schemas.patient import (
     PatientResponseSchema,
     PatientSearchSchema,
     PatientUpdateSchema,
+    SimplePatientCreateSchema,
 )
 from app.schemas.pagination import PaginatedResponse
+from app.services.audit_service import AuditService
 from app.services.patient_service import PatientService
 from app.utils.schema_conversion import convert_patients_to_response_list
 
@@ -28,104 +30,32 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix=f"{settings.api_v1_prefix}/patients", tags=["Patients"])
 
 
-@router.post(
-    "/", 
-    response_model=PatientResponseSchema, 
-    status_code=status.HTTP_201_CREATED,
-    summary="Crear Paciente",
-    description="""
-    Crea un nuevo paciente en el sistema.
-    
-    **Validaciones:**
-    - El número de documento debe ser único por inquilino
-    - Los campos obligatorios deben estar presentes
-    - El formato de fecha debe ser YYYY-MM-DD
-    - Los números de teléfono se normalizan automáticamente
-    
-    **Campos Personalizados:**
-    - Se pueden incluir campos adicionales específicos del inquilino
-    - Los campos personalizados se almacenan como JSONB
-    - No hay restricciones en la estructura de campos personalizados
-    
-    **Auditoría:**
-    - Se registra automáticamente la creación del paciente
-    - Se incluye información del API Key utilizado
-    - Se captura el contexto de la solicitud
-    """,
-    responses={
-        201: {
-            "description": "Paciente creado exitosamente",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "tenantId": "550e8400-e29b-41d4-a716-446655440001",
-                        "firstName": "Juan",
-                        "secondName": "Carlos",
-                        "firstLastName": "Pérez",
-                        "secondLastName": "González",
-                        "birthDate": "1990-05-15",
-                        "genderId": 1,
-                        "documentTypeId": 1,
-                        "documentNumber": "12345678",
-                        "phone": "+57-1-234-5678",
-                        "cellPhone": "+57-300-123-4567",
-                        "email": "juan.perez@example.com",
-                        "epsId": "EPS001",
-                        "habeasData": True,
-                        "customFields": {
-                            "emergencyContact": "María González",
-                            "emergencyPhone": "+57-300-987-6543"
-                        },
-                        "createdAt": "2024-01-15T10:30:00Z",
-                        "updatedAt": "2024-01-15T10:30:00Z"
-                    }
-                }
-            }
-        },
-        422: {
-            "description": "Error de validación",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "error": "Validation error",
-                        "detail": "Patient with document 12345678 already exists",
-                        "trace_id": "550e8400-e29b-41d4-a716-446655440002",
-                        "timestamp": "2024-01-15T10:30:00Z",
-                        "field": "document_number"
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "No autorizado - API Key requerida",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "error": "API key required. Provide X-Api-Key header.",
-                        "trace_id": "550e8400-e29b-41d4-a716-446655440003",
-                        "timestamp": "2024-01-15T10:30:00Z"
-                    }
-                }
-            }
-        }
-    },
-    tags=["Pacientes"]
-)
-async def create_patient(
-    patient_data: PatientCreateSchema,
-    request: Request,
+@router.post("/", response_model=PatientResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_patient_simple(
+    patient_data: SimplePatientCreateSchema,
     db: AsyncSession = Depends(get_db),
     current_tenant: TenantContext = Depends(get_current_tenant),
-    request_context: dict = Depends(get_request_context),
-    logger: logging.Logger = Depends(get_logger),
 ):
-    """Create a new patient."""
+    """Create a new patient with simplified schema."""
     
     patient_service = PatientService(db)
     
-    # Create patient with enhanced error handling
-    patient = await patient_service.create_patient(
+    # Create patient directly without going through the service's audit logging
+    from app.models.patient import Patient
+    
+    # Check if patient already exists
+    existing_patient = await patient_service.get_patient_by_document(
+        document_type_id=patient_data.document_type_id,
+        document_number=patient_data.document_number
+    )
+    if existing_patient:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Patient with document {patient_data.document_number} already exists"
+        )
+    
+    # Create patient directly
+    patient = Patient(
         tenant_id=UUID(current_tenant.tenant_id),
         first_name=patient_data.first_name,
         first_last_name=patient_data.first_last_name,
@@ -140,90 +70,97 @@ async def create_patient(
         email=patient_data.email,
         eps_id=patient_data.eps_id,
         habeas_data=patient_data.habeas_data,
-        custom_fields=patient_data.custom_fields,
-        request_context=request_context,
+        custom_fields=patient_data.custom_fields or {},
     )
     
-    logger.info(f"Successfully created patient {patient.id}")
+    db.add(patient)
+    await db.commit()
+    await db.refresh(patient)
+    
+    logger.info(f"Successfully created patient {patient.id} with simple schema")
     
     return convert_patients_to_response_list([patient])[0]
 
 
-@router.get(
-    "/{patient_id}", 
-    response_model=PatientResponseSchema,
-    summary="Obtener Paciente",
-    description="""
-    Obtiene un paciente específico por su ID.
+@router.patch("/{patient_id}", response_model=PatientResponseSchema)
+async def update_patient(
+    patient_id: UUID,
+    patient_data: PatientUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Update patient information."""
     
-    **Aislamiento de Datos:**
-    - Solo se puede acceder a pacientes del inquilino autenticado
-    - Los pacientes de otros inquilinos no son visibles
-    - Se aplica Row-Level Security (RLS) a nivel de base de datos
+    patient_service = PatientService(db)
     
-    **Respuesta:**
-    - Incluye todos los campos del paciente
-    - Los campos personalizados se devuelven tal como se almacenaron
-    - Se incluyen metadatos de auditoría (fechas de creación/actualización)
-    """,
-    responses={
-        200: {
-            "description": "Paciente encontrado exitosamente",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "tenantId": "550e8400-e29b-41d4-a716-446655440001",
-                        "firstName": "Juan",
-                        "secondName": "Carlos",
-                        "firstLastName": "Pérez",
-                        "secondLastName": "González",
-                        "birthDate": "1990-05-15",
-                        "genderId": 1,
-                        "documentTypeId": 1,
-                        "documentNumber": "12345678",
-                        "phone": "+57-1-234-5678",
-                        "cellPhone": "+57-300-123-4567",
-                        "email": "juan.perez@example.com",
-                        "epsId": "EPS001",
-                        "habeasData": True,
-                        "customFields": {
-                            "emergencyContact": "María González",
-                            "emergencyPhone": "+57-300-987-6543"
-                        },
-                        "createdAt": "2024-01-15T10:30:00Z",
-                        "updatedAt": "2024-01-15T10:30:00Z"
-                    }
-                }
-            }
-        },
-        404: {
-            "description": "Paciente no encontrado",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "error": "Patient 550e8400-e29b-41d4-a716-446655440000 not found",
-                        "trace_id": "550e8400-e29b-41d4-a716-446655440004",
-                        "timestamp": "2024-01-15T10:30:00Z"
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "No autorizado - API Key requerida",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "error": "API key required. Provide X-Api-Key header.",
-                        "trace_id": "550e8400-e29b-41d4-a716-446655440005",
-                        "timestamp": "2024-01-15T10:30:00Z"
-                    }
-                }
-            }
-        }
-    },
-    tags=["Pacientes"]
-)
+    # Get existing patient
+    existing_patient = await patient_service.get_patient_by_id(patient_id)
+    if not existing_patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found"
+        )
+    
+    # Prepare update data
+    update_data = patient_data.dict(exclude_unset=True, exclude={'event_type', 'action_type'})
+    
+    # Check if document number is being changed and if it conflicts
+    if 'document_number' in update_data or 'document_type_id' in update_data:
+        doc_type_id = update_data.get('document_type_id', existing_patient.document_type_id)
+        doc_number = update_data.get('document_number', existing_patient.document_number)
+        
+        conflicting_patient = await patient_service.get_patient_by_document(
+            document_type_id=doc_type_id,
+            document_number=doc_number
+        )
+        
+        if conflicting_patient and conflicting_patient.id != patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Another patient with this document already exists"
+            )
+    
+    # Update patient directly without audit logging
+    for key, value in update_data.items():
+        if hasattr(existing_patient, key):
+            setattr(existing_patient, key, value)
+    
+    await db.commit()
+    await db.refresh(existing_patient)
+    
+    logger.info(f"Updated patient {patient_id} for tenant {current_tenant.tenant_id}")
+    
+    return convert_patients_to_response_list([existing_patient])[0]
+
+
+@router.delete("/{patient_id}", response_model=dict)
+async def delete_patient(
+    patient_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Delete a patient."""
+    
+    patient_service = PatientService(db)
+    
+    # Get existing patient
+    existing_patient = await patient_service.get_patient_by_id(patient_id)
+    if not existing_patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found"
+        )
+    
+    # Delete patient directly without audit logging
+    await db.delete(existing_patient)
+    await db.commit()
+    
+    logger.info(f"Deleted patient {patient_id} for tenant {current_tenant.tenant_id}")
+    
+    return {"message": "Patient deleted successfully"}
+
+
+@router.get("/{patient_id}", response_model=PatientResponseSchema)
 async def get_patient(
     patient_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -414,47 +351,25 @@ async def search_patients(
     )
 
 
-@router.get("/search", response_model=PatientListResponseSchema)
-async def search_patients_advanced(
-    search_params: PatientSearchSchema = Depends(),
+@router.get("/by-document/{document_type_id}/{document_number}", response_model=PatientResponseSchema)
+async def get_patient_by_document(
+    document_type_id: int,
+    document_number: str,
     db: AsyncSession = Depends(get_db),
     current_tenant: TenantContext = Depends(get_current_tenant),
 ):
-    """Advanced patient search with structured parameters."""
+    """Get patient by national identification (document type + document number)."""
     
     patient_service = PatientService(db)
-    
-    # Search patients
-    patients = await patient_service.search_patients(
-        document_type_id=search_params.document_type_id,
-        document_number=search_params.document_number,
-        email=search_params.email,
-        phone=search_params.phone,
-        cell_phone=search_params.cell_phone,
-        limit=search_params.size,
-        offset=(search_params.page - 1) * search_params.size,
+    patient = await patient_service.get_patient_by_document(
+        document_type_id=document_type_id,
+        document_number=document_number
     )
     
-    # Get total count for pagination
-    total_patients = await patient_service.search_patients(
-        document_type_id=search_params.document_type_id,
-        document_number=search_params.document_number,
-        email=search_params.email,
-        phone=search_params.phone,
-        cell_phone=search_params.cell_phone,
-        limit=1000,
-        offset=0,
-    )
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found"
+        )
     
-    total = len(total_patients)
-    has_next = (search_params.page * search_params.size) < total
-    has_prev = search_params.page > 1
-    
-    return PatientListResponseSchema(
-        patients=convert_patients_to_response_list(patients),
-        total=total,
-        page=search_params.page,
-        size=search_params.size,
-        has_next=has_next,
-        has_prev=has_prev,
-    )
+    return convert_patients_to_response_list([patient])[0]

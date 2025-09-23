@@ -302,3 +302,60 @@ class PatientDeleteSchema(BaseSchema):
     
     event_type: EventType = Field(EventType.PATIENT, description="Event type")
     action_type: ActionType = Field(ActionType.DELETE, description="Action type")
+
+
+class SimplePatientCreateSchema(BaseSchema):
+    """Simplified schema for creating a patient."""
+    
+    first_name: str = Field(..., min_length=1, max_length=255)
+    first_last_name: str = Field(..., min_length=1, max_length=255)
+    birth_date: date = Field(...)
+    gender_id: int = Field(...)
+    document_type_id: int = Field(...)
+    document_number: str = Field(..., min_length=1, max_length=50)
+    second_name: Optional[str] = Field(None, max_length=255)
+    second_last_name: Optional[str] = Field(None, max_length=255)
+    phone: Optional[str] = Field(None, max_length=20)
+    cell_phone: Optional[str] = Field(None, max_length=20)
+    email: Optional[str] = Field(None, max_length=255)
+    eps_id: Optional[str] = Field(None, max_length=100)
+    habeas_data: bool = Field(False)
+    custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    @validator('phone')
+    def validate_phone(cls, v):
+        """Validate phone number format."""
+        if v is not None:
+            return EnhancedValidators.validate_phone(cls, v)
+        return v
+    
+    @validator('cell_phone')
+    def validate_cell_phone(cls, v):
+        """Validate cell phone number format."""
+        if v is not None:
+            return EnhancedValidators.validate_cell_phone(cls, v)
+        return v
+    
+    @validator('email')
+    def validate_email(cls, v):
+        """Validate email format."""
+        if v is not None:
+            return EnhancedValidators.validate_email(cls, v)
+        return v
+    
+    @validator('document_number')
+    def validate_document_number(cls, v, values):
+        """Validate document number based on document type."""
+        return EnhancedValidators.validate_document_number(cls, v, values)
+    
+    @validator('birth_date')
+    def validate_birth_date(cls, v):
+        """Validate birth date."""
+        return EnhancedValidators.validate_birth_date(cls, v)
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        if v is not None:
+            return EnhancedValidators.validate_custom_fields(cls, v)
+        return v

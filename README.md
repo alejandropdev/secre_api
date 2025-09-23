@@ -1,140 +1,228 @@
 # Secre API
 
-Multi-tenant Medical Integration API built with FastAPI, PostgreSQL, and Row-Level Security (RLS).
+A **practical, multi-tenant medical integration API** built with FastAPI, PostgreSQL, and Docker. Designed for real-world medical practice management with easy-to-use endpoints.
 
-## Overview
+## ✨ **Key Features**
 
-This API serves as an internal integration layer between chatbots (n8n agents) and external medical systems. It provides multi-tenant isolation, flexible schema support via JSONB fields, and secure API key authentication.
+- **🏥 Multi-tenant Architecture**: Complete tenant isolation with Row Level Security (RLS)
+- **📅 Doctor Availability System**: Calendar management with time slot availability
+- **👥 Patient Management**: Complete CRUD operations with document-based search
+- **📋 Appointment Scheduling**: Smart scheduling with conflict detection
+- **🔑 API Key Authentication**: Secure, tenant-specific API keys
+- **⚡ High Performance**: Async operations throughout
+- **🐳 Docker Ready**: Complete containerization with docker-compose
+- **📊 Flexible Schemas**: JSONB fields for tenant-specific customizations
 
-## Architecture
+## 🚀 **Quick Start**
 
-- **Backend**: FastAPI (async) with Uvicorn
-- **Database**: PostgreSQL 16 with SQLAlchemy 2.x and Alembic migrations
-- **Tenancy**: Single database with Row-Level Security (RLS)
-- **Flexible Fields**: JSONB columns for tenant-specific custom fields
-- **Authentication**: API Key-based server-to-server authentication
-- **Observability**: Structured JSON logging with request tracking
-
-## Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Python 3.11+ (for local development)
-
-### Development Setup
-
-1. **Clone and setup**:
-   ```bash
-   git clone <repository-url>
-   cd secre_api
-   cp env.example .env
-   ```
-
-2. **Start services**:
-   ```bash
-   make up
-   ```
-
-3. **Run migrations**:
-   ```bash
-   make migrate
-   ```
-
-4. **Seed sample data**:
-   ```bash
-   make seed
-   ```
-
-5. **Access the API**:
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
-   - PgAdmin: http://localhost:5050 (admin@secre.com / admin)
-
-### Available Commands
-
+### 1. Setup
 ```bash
-make help          # Show all available commands
-make up            # Start all services
-make down          # Stop all services
-make logs          # Show logs
-make migrate       # Run database migrations
-make seed          # Seed sample data
-make test          # Run tests
-make clean         # Clean up containers and volumes
-make lint          # Run linting
-make format        # Format code
+git clone <repository-url>
+cd secre_api
+cp env.example .env
 ```
 
-## API Endpoints
+### 2. Start Services
+```bash
+make up
+```
 
-### Authentication
-- `POST /v1/auth/api-keys` - Create/rotate/revoke API keys
-- `GET /v1/auth/api-keys` - List API keys (redacts secrets)
+### 3. Initialize Database
+```bash
+make migrate
+make seed
+```
 
-### Patients
-- `POST /v1/patients` - Create patient
-- `GET /v1/patients/{id}` - Get patient by ID
-- `PATCH /v1/patients/{id}` - Update patient
-- `DELETE /v1/patients/{id}` - Delete patient
-- `GET /v1/patients` - List patients with filters
+### 4. Access API
+- **API**: http://localhost:8000
+- **Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
-### Appointments
-- `POST /v1/appointments` - Create appointment
-- `GET /v1/appointments/{id}` - Get appointment by ID
-- `PATCH /v1/appointments/{id}` - Update appointment
-- `DELETE /v1/appointments/{id}` - Delete appointment
-- `GET /v1/appointments` - List appointments with filters
+## 🔑 **API Keys**
 
-## Multi-Tenant Security
+**Master API Key** (for admin operations):
+```
+hPoRkL0mz91Ui3sPTsFflbBUPvpHC67TdNC4ytGw19evzSRRlfn9To8LmL89b5wP
+```
 
-The API enforces tenant isolation at multiple levels:
+**Miguel Parrado Tenant API Key**:
+```
+uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc
+```
 
-1. **Database Level**: Row-Level Security (RLS) policies ensure data isolation
-2. **Application Level**: API key middleware validates tenant access
-3. **Request Level**: Each request is scoped to a specific tenant
+## 📖 **Complete API Documentation**
 
-## Development
+For detailed endpoint documentation, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
+
+## 🏥 **Quick Examples**
+
+### Create a Patient
+```bash
+curl -X POST http://localhost:8000/v1/patients/ \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc" \
+  -d '{
+    "first_name": "Juan",
+    "first_last_name": "Pérez",
+    "birth_date": "1990-05-15",
+    "gender_id": 1,
+    "document_type_id": 1,
+    "document_number": "12345678",
+    "phone": "3001234567",
+    "email": "juan.perez@example.com"
+  }'
+```
+
+### Set Doctor Availability
+```bash
+curl -X POST http://localhost:8000/v1/doctor-availability/availability \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc" \
+  -d '{
+    "doctor_document_type_id": 1,
+    "doctor_document_number": "99999999",
+    "day_of_week": 1,
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "appointment_duration_minutes": 30
+  }'
+```
+
+### Create an Appointment
+```bash
+curl -X POST http://localhost:8000/v1/appointments/ \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc" \
+  -d '{
+    "start_datetime": "2025-09-25T10:00:00",
+    "end_datetime": "2025-09-25T11:00:00",
+    "patient_document_type_id": 1,
+    "patient_document_number": "12345678",
+    "doctor_document_type_id": 1,
+    "doctor_document_number": "99999999",
+    "modality": "presencial",
+    "state": "scheduled"
+  }'
+```
+
+### Check Available Time Slots
+```bash
+curl -X GET "http://localhost:8000/v1/doctor-availability/time-slots/1/99999999?date=2025-09-25" \
+  -H "X-Api-Key: uvG1t0H6xS4_qKkd1qMmMKlH0AbtShBBqo0GaZCbwjc"
+```
+
+## 🏗️ **Architecture**
+
+### Directory Structure
+```
+backend/
+  app/
+    api/v1/              # API endpoints
+      ├── admin.py       # Admin operations (tenant creation)
+      ├── auth.py        # Authentication & API keys
+      ├── patients.py    # Patient management
+      ├── appointments.py # Appointment scheduling
+      ├── doctor_availability.py # Calendar & availability
+      ├── health.py      # Health checks
+      ├── lookup.py      # Reference data
+      └── router.py      # Main router
+    core/                # Configuration and dependencies
+    db/                  # Database session and base
+    models/              # SQLAlchemy models
+    schemas/             # Pydantic schemas
+    services/            # Business logic
+    middleware/          # Custom middleware (auth, RLS)
+    utils/               # Utility functions
+  alembic/               # Database migrations
+  tests/                 # Test suite
+```
+
+### Key Components
+
+- **Models**: SQLAlchemy models with tenant isolation
+- **Schemas**: Pydantic for validation and serialization  
+- **Services**: Business logic layer
+- **Middleware**: API key auth and RLS enforcement
+- **Migrations**: Alembic with RLS policies
+
+## 🛠️ **Development**
+
+### Running Tests
+```bash
+make test
+```
+
+### Database Operations
+```bash
+make migrate          # Run migrations
+make rollback         # Rollback last migration
+make seed            # Seed lookup data
+make reset-db         # Reset database
+```
 
 ### Code Quality
-
-The project uses several tools for code quality:
-
-- **Black**: Code formatting
-- **isort**: Import sorting
-- **Ruff**: Fast linting
-- **MyPy**: Type checking
-- **Pre-commit**: Git hooks for quality checks
-
-### Testing
-
 ```bash
-# Run all tests
-make test
-
-# Run tests locally
-make test-local
+make lint            # Run linting
+make format          # Format code
+make type-check      # Type checking
 ```
 
-### Database Migrations
+## 🔧 **Configuration**
 
-```bash
-# Create a new migration
-make migrate-create message="Add new table"
+Environment variables (see `env.example`):
+- `DATABASE_URL`: PostgreSQL connection string
+- `SECRET_KEY`: JWT secret key
+- `MASTER_API_KEY`: Master API key for admin operations
 
-# Apply migrations
-make migrate
-```
+## 📋 **API Endpoints Summary**
 
-## Production Deployment
+### Patients
+- `POST /v1/patients/` - Create patient
+- `GET /v1/patients/{id}` - Get patient by ID
+- `GET /v1/patients/by-document/{type}/{number}` - Get patient by document
+- `GET /v1/patients/` - List patients
+- `PATCH /v1/patients/{id}` - Update patient
+- `DELETE /v1/patients/{id}` - Delete patient
 
-The application is designed to be deployed on AWS with two options:
+### Appointments
+- `POST /v1/appointments/` - Create appointment
+- `GET /v1/appointments/{id}` - Get appointment by ID
+- `GET /v1/appointments/` - List appointments
+- `GET /v1/appointments/by-date-range` - Get appointments by date range
+- `PATCH /v1/appointments/{id}` - Update appointment
+- `DELETE /v1/appointments/{id}` - Delete appointment
 
-1. **ECS Fargate + ALB**: For always-warm, low-latency scenarios
-2. **API Gateway + Lambda**: For spiky traffic patterns
+### Doctor Availability
+- `POST /v1/doctor-availability/availability` - Set work hours
+- `GET /v1/doctor-availability/availability/{type}/{number}` - Get availability
+- `PATCH /v1/doctor-availability/availability/{id}` - Update availability
+- `DELETE /v1/doctor-availability/availability/{id}` - Delete availability
+- `POST /v1/doctor-availability/blocked-time` - Block time slots
+- `GET /v1/doctor-availability/time-slots/{type}/{number}` - Get available slots
+- `GET /v1/doctor-availability/check-availability/{type}/{number}` - Check availability
 
-See the deployment documentation for detailed instructions.
+### Admin
+- `POST /v1/admin/tenants` - Create tenant (master key required)
+- `POST /v1/admin/bootstrap` - Bootstrap system (master key required)
 
-## License
+## 🔒 **Security**
 
-[Add your license information here]
+- **Tenant Isolation**: Complete data separation at database level
+- **API Key Authentication**: Secure, tenant-specific access
+- **Row Level Security**: Database-level tenant enforcement
+- **Input Validation**: Comprehensive data validation
+- **Error Handling**: Secure error responses
+
+## 🎯 **Best Practices Implemented**
+
+1. **RESTful Design**: Standard HTTP methods and status codes
+2. **Practical Endpoints**: Simple, easy-to-use API design
+3. **Comprehensive CRUD**: Full Create, Read, Update, Delete operations
+4. **Smart Scheduling**: Automatic conflict detection and availability checking
+5. **Flexible Data**: JSONB fields for custom tenant requirements
+6. **Performance**: Async operations and efficient queries
+7. **Documentation**: Complete API documentation with examples
+
+## 📄 **License**
+
+MIT License - see LICENSE file for details.

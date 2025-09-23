@@ -252,3 +252,36 @@ class AppointmentDeleteSchema(BaseSchema):
     
     event_type: EventType = Field(EventType.APPOINTMENT, description="Event type")
     action_type: ActionType = Field(ActionType.DELETE, description="Action type")
+
+
+class SimpleAppointmentCreateSchema(BaseSchema):
+    """Simplified schema for creating an appointment."""
+    
+    start_datetime: str = Field(..., description="Start datetime in ISO format (e.g., 2024-01-15T10:00:00)")
+    end_datetime: str = Field(..., description="End datetime in ISO format (e.g., 2024-01-15T11:00:00)")
+    patient_document_type_id: int = Field(..., description="Patient document type ID")
+    patient_document_number: str = Field(..., description="Patient document number")
+    doctor_document_type_id: int = Field(..., description="Doctor document type ID")
+    doctor_document_number: str = Field(..., description="Doctor document number")
+    modality: str = Field(default="presencial", description="Appointment modality")
+    state: str = Field(default="scheduled", description="Appointment state")
+    appointment_type: str = Field(default="consulta", description="Appointment type")
+    clinic_id: Optional[str] = Field(None, description="Clinic ID")
+    comment: Optional[str] = Field(None, description="Appointment comment")
+    custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    @validator('start_datetime', 'end_datetime')
+    def validate_datetime(cls, v):
+        """Validate datetime format."""
+        try:
+            from datetime import datetime
+            return datetime.fromisoformat(v.replace('Z', '+00:00'))
+        except ValueError:
+            raise ValueError(f"Invalid datetime format: {v}. Use ISO format like '2024-01-15T10:00:00'")
+    
+    @validator('custom_fields')
+    def validate_custom_fields(cls, v):
+        """Validate custom fields."""
+        if v is not None:
+            return EnhancedValidators.validate_custom_fields(cls, v)
+        return v
