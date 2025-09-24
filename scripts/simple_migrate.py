@@ -45,14 +45,9 @@ def seed_data():
     print("🌱 Seeding initial data...")
     
     try:
-        from sqlalchemy import create_engine
-        from app.core.config import settings
-        from scripts.init_db import seed_lookup_data
-        
-        # Create a fresh sync engine for seeding
-        engine = create_engine(settings.effective_database_url)
-        seed_lookup_data(engine)
-        print("✅ Initial data seeded successfully")
+        # The seeding data is already included in the Alembic migration 003_seed_lookup_data.py
+        # So it gets seeded automatically when we run migrations
+        print("✅ Initial data seeded successfully (via Alembic migration)")
         return True
     except Exception as e:
         print(f"❌ Seeding failed: {e}")
@@ -66,23 +61,21 @@ def create_tenant():
     
     try:
         from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
         from app.core.config import settings
-        from scripts.create_tenant_and_apikey import create_tenant_and_apikey
+        from app.models.tenant import Tenant
+        from app.models.api_key import ApiKey
+        import secrets
+        import uuid
         
         # Create a fresh sync engine for tenant creation
         engine = create_engine(settings.effective_database_url)
-        
-        # We need to modify the create_tenant_and_apikey function to accept an engine
-        # For now, let's create the tenant manually
-        from sqlalchemy.orm import sessionmaker
-        from app.models.tenant import Tenant
-        from app.models.api_key import APIKey
-        import secrets
-        
         SessionLocal = sessionmaker(bind=engine)
+        
         with SessionLocal() as session:
             # Create tenant
             tenant = Tenant(
+                id=uuid.uuid4(),
                 name="Default Tenant",
                 is_active=True
             )
@@ -90,9 +83,12 @@ def create_tenant():
             session.flush()  # Get the tenant ID
             
             # Create API key
-            api_key = APIKey(
+            api_key_value = secrets.token_hex(32)
+            api_key = ApiKey(
+                id=uuid.uuid4(),
                 tenant_id=tenant.id,
-                key=secrets.token_hex(32),
+                key=api_key_value,
+                name="Default API Key",
                 is_active=True
             )
             session.add(api_key)
@@ -100,7 +96,7 @@ def create_tenant():
             
             print("✅ Tenant created successfully")
             print(f"   Tenant ID: {tenant.id}")
-            print(f"   API Key: {api_key.key}")
+            print(f"   API Key: {api_key_value}")
             print("   🔐 Keep this API key safe - you'll need it to access the API!")
             return True
             
