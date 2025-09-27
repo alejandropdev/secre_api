@@ -24,6 +24,8 @@ def upgrade() -> None:
         {'id': '33333333-3333-3333-3333-333333333333', 'code': 'TI', 'name': 'Tarjeta de Identidad', 'description': 'Identity card for minors'},
         {'id': '44444444-4444-4444-4444-444444444444', 'code': 'RC', 'name': 'Registro Civil', 'description': 'Birth certificate'},
         {'id': '55555555-5555-5555-5555-555555555555', 'code': 'PA', 'name': 'Pasaporte', 'description': 'Passport'},
+        {'id': '66666666-6666-6666-6666-666666666666', 'code': 'PEP', 'name': 'Permiso especial de Permanencia', 'description': 'Special permanence permit'},
+        {'id': '77777777-7777-7777-7777-777777777777', 'code': 'PSI', 'name': 'Persona sin identificar', 'description': 'Unidentified person'},
     ]
     
     for doc_type in document_types:

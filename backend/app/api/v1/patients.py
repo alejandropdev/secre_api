@@ -299,7 +299,7 @@ async def delete_patient(
     return {"message": "Patient deleted successfully"}
 
 
-@router.get("/", response_model=PatientListResponseSchema)
+@router.get("/search", response_model=PatientListResponseSchema)
 async def search_patients(
     document_type_id: int = Query(None, description="Filter by document type ID"),
     document_number: str = Query(None, description="Filter by document number"),
