@@ -25,7 +25,10 @@ class RLSMiddleware(BaseHTTPMiddleware):
         if tenant_context:
             # Set tenant context in database session
             # This will be handled by the database session hook
-            logger.debug(f"Setting tenant context: {tenant_context.tenant_id}")
+            if tenant_context.tenant_id == "master":
+                logger.debug("Master API key used - bypassing RLS")
+            else:
+                logger.debug(f"Setting tenant context: {tenant_context.tenant_id}")
         else:
             logger.warning("No tenant context found for request")
         

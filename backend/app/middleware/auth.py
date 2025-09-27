@@ -48,6 +48,25 @@ async def verify_api_key_and_get_tenant(
             detail="API key required. Provide X-Api-Key header.",
         )
     
+    # Check if this is the master API key
+    from app.core.config import settings
+    if api_key == settings.master_api_key:
+        # Master API key - create special tenant context
+        tenant_context = TenantContext(
+            tenant_id="master",
+            tenant_name="Master Admin",
+            api_key_id="master",
+        )
+        
+        # Set tenant context in request state for RLS
+        request.state.tenant_context = tenant_context
+        
+        # Don't set tenant context for database session (master has access to all)
+        # set_tenant_context("master")  # Commented out for master access
+        
+        logger.info("Master API key used for request")
+        return tenant_context
+    
     # Hash the provided API key
     key_hash = hash_api_key(api_key)
     
@@ -62,14 +81,16 @@ async def verify_api_key_and_get_tenant(
         )
     )
     
-    api_key_obj, tenant_obj = result.first()
+    result_row = result.first()
     
-    if not api_key_obj or not tenant_obj:
+    if not result_row:
         logger.warning(f"Invalid API key attempt: {api_key[:8]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
         )
+    
+    api_key_obj, tenant_obj = result_row
     
     # Update last used timestamp
     api_key_obj.last_used_at = datetime.utcnow()

@@ -55,9 +55,11 @@ async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         # Set tenant context for RLS
         current_tenant = tenant_context.get()
-        if current_tenant:
+        if current_tenant and current_tenant != "master":
             await session.execute(text("SET LOCAL app.tenant_id = :tenant_id"), {"tenant_id": current_tenant})
             logger.debug(f"Set tenant context in DB session: {current_tenant}")
+        elif current_tenant == "master":
+            logger.debug("Master API key - no tenant context set (full access)")
         
         try:
             yield session
