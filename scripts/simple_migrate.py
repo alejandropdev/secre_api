@@ -67,6 +67,7 @@ def create_tenant():
         from app.models.api_key import ApiKey
         import secrets
         import uuid
+        import hashlib
         
         # Create a fresh sync engine for tenant creation
         engine = create_engine(settings.effective_database_url)
@@ -84,12 +85,13 @@ def create_tenant():
             
             # Create API key
             api_key_value = secrets.token_hex(32)
+            api_key_hash = hashlib.sha256(api_key_value.encode()).hexdigest()
+            
             api_key = ApiKey(
                 id=uuid.uuid4(),
                 tenant_id=tenant.id,
-                key=api_key_value,
-                name="Default API Key",
-                is_active=True
+                key_hash=api_key_hash,
+                name="Default API Key"
             )
             session.add(api_key)
             session.commit()
@@ -125,19 +127,14 @@ def main():
         sys.exit(1)
     
     print()
-    
-    # Step 3: Create tenant
-    if not create_tenant():
-        print("❌ Setup failed at tenant creation step")
-        sys.exit(1)
-    
-    print()
     print("🎉 Railway database setup completed successfully!")
     print()
     print("Next steps:")
     print("1. Test your API endpoints")
-    print("2. Save your API key securely")
+    print("2. Create a tenant and API key manually using the API")
     print("3. Start using your API!")
+    print()
+    print("To create a tenant and API key, use the /v1/admin/tenants endpoint")
 
 if __name__ == "__main__":
     main()
