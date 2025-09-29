@@ -202,8 +202,6 @@ class DoctorAvailabilityService:
                 time_slots.append({
                     "start_datetime": current_time,
                     "end_datetime": slot_end,
-                    "doctor_document_type_id": doctor_document_type_id,
-                    "doctor_document_number": doctor_document_number,
                     "available": not (is_blocked or is_booked),
                 })
                 

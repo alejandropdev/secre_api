@@ -66,12 +66,10 @@ class DoctorBlockedTimeResponseSchema(BaseSchema):
 
 
 class TimeSlotSchema(BaseSchema):
-    """Schema for available time slots."""
+    """Schema for time slots."""
     
     start_datetime: datetime
     end_datetime: datetime
-    doctor_document_type_id: int
-    doctor_document_number: str
     available: bool
 
 

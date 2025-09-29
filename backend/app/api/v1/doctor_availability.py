@@ -322,8 +322,6 @@ async def get_available_time_slots(
             TimeSlotSchema(
                 start_datetime=slot["start_datetime"],
                 end_datetime=slot["end_datetime"],
-                doctor_document_type_id=slot["doctor_document_type_id"],
-                doctor_document_number=slot["doctor_document_number"],
                 available=slot["available"],
             )
             for slot in time_slots
