@@ -127,10 +127,11 @@ class DoctorAvailabilityService:
                     DoctorAvailability.is_active == True,
                 )
             )
+            .order_by(DoctorAvailability.start_time)
         )
-        availability = availability_result.scalar_one_or_none()
+        availability_records = availability_result.scalars().all()
         
-        if not availability:
+        if not availability_records:
             return []
         
         # Get blocked times for this date
@@ -171,40 +172,42 @@ class DoctorAvailabilityService:
         )
         appointments = appointments_result.scalars().all()
         
-        # Generate time slots
+        # Generate time slots for all availability records
         time_slots = []
-        current_time = datetime.combine(date.date(), availability.start_time)
-        end_time = datetime.combine(date.date(), availability.end_time)
-        duration = timedelta(minutes=availability.appointment_duration_minutes)
         
-        # Make timezone-aware
-        current_time = current_time.replace(tzinfo=None)
-        end_time = end_time.replace(tzinfo=None)
-        
-        while current_time + duration <= end_time:
-            slot_end = current_time + duration
+        for availability in availability_records:
+            current_time = datetime.combine(date.date(), availability.start_time)
+            end_time = datetime.combine(date.date(), availability.end_time)
+            duration = timedelta(minutes=availability.appointment_duration_minutes)
             
-            # Check if this slot conflicts with blocked time
-            is_blocked = any(
-                current_time < bt.end_datetime and slot_end > bt.start_datetime
-                for bt in blocked_times
-            )
+            # Make timezone-aware
+            current_time = current_time.replace(tzinfo=None)
+            end_time = end_time.replace(tzinfo=None)
             
-            # Check if this slot conflicts with existing appointments
-            is_booked = any(
-                current_time < ap.end_utc.replace(tzinfo=None) and slot_end > ap.start_utc.replace(tzinfo=None)
-                for ap in appointments
-            )
-            
-            time_slots.append({
-                "start_datetime": current_time,
-                "end_datetime": slot_end,
-                "doctor_document_type_id": doctor_document_type_id,
-                "doctor_document_number": doctor_document_number,
-                "available": not (is_blocked or is_booked),
-            })
-            
-            current_time += duration
+            while current_time + duration <= end_time:
+                slot_end = current_time + duration
+                
+                # Check if this slot conflicts with blocked time
+                is_blocked = any(
+                    current_time < bt.end_datetime and slot_end > bt.start_datetime
+                    for bt in blocked_times
+                )
+                
+                # Check if this slot conflicts with existing appointments
+                is_booked = any(
+                    current_time < ap.end_utc.replace(tzinfo=None) and slot_end > ap.start_utc.replace(tzinfo=None)
+                    for ap in appointments
+                )
+                
+                time_slots.append({
+                    "start_datetime": current_time,
+                    "end_datetime": slot_end,
+                    "doctor_document_type_id": doctor_document_type_id,
+                    "doctor_document_number": doctor_document_number,
+                    "available": not (is_blocked or is_booked),
+                })
+                
+                current_time += duration
         
         return time_slots
     
