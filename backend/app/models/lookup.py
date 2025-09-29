@@ -1,8 +1,6 @@
 """Lookup tables for common enums and reference data."""
 
-import uuid
-from sqlalchemy import Column, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, Integer, String, Text
 
 from app.db.base import Base, TimestampMixin
 
@@ -12,12 +10,7 @@ class DocumentType(Base, TimestampMixin):
     
     __tablename__ = "document_type"
     
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        nullable=False,
-    )
+    id = Column(Integer, primary_key=True, nullable=False)
     code = Column(String(10), nullable=False, unique=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
@@ -31,12 +24,7 @@ class Gender(Base, TimestampMixin):
     
     __tablename__ = "gender"
     
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        nullable=False,
-    )
+    id = Column(Integer, primary_key=True, nullable=False)
     code = Column(String(10), nullable=False, unique=True)
     name = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
@@ -50,12 +38,7 @@ class AppointmentModality(Base, TimestampMixin):
     
     __tablename__ = "appointment_modality"
     
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        nullable=False,
-    )
+    id = Column(Integer, primary_key=True, nullable=False)
     code = Column(String(20), nullable=False, unique=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
@@ -69,12 +52,7 @@ class AppointmentState(Base, TimestampMixin):
     
     __tablename__ = "appointment_state"
     
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        nullable=False,
-    )
+    id = Column(Integer, primary_key=True, nullable=False)
     code = Column(String(20), nullable=False, unique=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)

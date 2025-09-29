@@ -1,7 +1,6 @@
 """Lookup/reference data Pydantic schemas."""
 
 from typing import List, Optional
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +10,7 @@ from app.schemas.base import BaseSchema
 class LookupBaseSchema(BaseSchema):
     """Base schema for lookup tables."""
     
-    id: UUID
+    id: int
     code: str
     name: str
     description: Optional[str] = None
