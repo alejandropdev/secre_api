@@ -34,7 +34,6 @@ class PatientService:
         second_name: Optional[str] = None,
         second_last_name: Optional[str] = None,
         phone: Optional[str] = None,
-        cell_phone: Optional[str] = None,
         email: Optional[str] = None,
         eps_id: Optional[str] = None,
         habeas_data: bool = False,
@@ -63,7 +62,6 @@ class PatientService:
                 second_name=second_name,
                 second_last_name=second_last_name,
                 phone=phone,
-                cell_phone=cell_phone,
                 email=email,
                 eps_id=eps_id,
                 habeas_data=habeas_data,
@@ -122,7 +120,6 @@ class PatientService:
         document_number: Optional[str] = None,
         email: Optional[str] = None,
         phone: Optional[str] = None,
-        cell_phone: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> List[Patient]:
@@ -139,8 +136,6 @@ class PatientService:
             conditions.append(Patient.email.ilike(f"%{email}%"))
         if phone:
             conditions.append(Patient.phone.ilike(f"%{phone}%"))
-        if cell_phone:
-            conditions.append(Patient.cell_phone.ilike(f"%{cell_phone}%"))
         
         if conditions:
             query = query.where(and_(*conditions))

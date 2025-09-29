@@ -66,7 +66,6 @@ async def create_patient_simple(
         second_name=patient_data.second_name,
         second_last_name=patient_data.second_last_name,
         phone=patient_data.phone,
-        cell_phone=patient_data.cell_phone,
         email=patient_data.email,
         eps_id=patient_data.eps_id,
         habeas_data=patient_data.habeas_data,
@@ -305,7 +304,6 @@ async def search_patients(
     document_number: str = Query(None, description="Filter by document number"),
     email: str = Query(None, description="Filter by email"),
     phone: str = Query(None, description="Filter by phone"),
-    cell_phone: str = Query(None, description="Filter by cell phone"),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(50, ge=1, le=100, description="Page size"),
     db: AsyncSession = Depends(get_db),
@@ -321,7 +319,6 @@ async def search_patients(
         document_number=document_number,
         email=email,
         phone=phone,
-        cell_phone=cell_phone,
         limit=size,
         offset=(page - 1) * size,
     )
@@ -332,7 +329,6 @@ async def search_patients(
         document_number=document_number,
         email=email,
         phone=phone,
-        cell_phone=cell_phone,
         limit=1000,  # Large limit to get total count
         offset=0,
     )

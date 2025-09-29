@@ -41,7 +41,6 @@ def convert_patient_to_response(patient: Patient) -> PatientResponseSchema:
         document_type_id=patient.document_type_id,
         document_number=patient.document_number,
         phone=patient.phone,
-        cell_phone=patient.cell_phone,
         email=patient.email,
         eps_id=patient.eps_id,
         habeas_data=patient.habeas_data,

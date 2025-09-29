@@ -25,13 +25,12 @@ class Patient(Base, TenantMixin, TimestampMixin):
     second_name = Column(String(255), nullable=True)
     first_last_name = Column(String(255), nullable=False)
     second_last_name = Column(String(255), nullable=True)
-    birth_date = Column(Date, nullable=False)
-    gender_id = Column(Integer, nullable=False)
+    birth_date = Column(Date, nullable=True)
+    gender_id = Column(Integer, nullable=True)
     document_type_id = Column(Integer, nullable=False)
     document_number = Column(String(50), nullable=False)
-    phone = Column(String(20), nullable=True)
-    cell_phone = Column(String(20), nullable=True)
-    email = Column(String(255), nullable=True)
+    phone = Column(String(20), nullable=False)
+    email = Column(String(255), nullable=False)
     eps_id = Column(String(100), nullable=True)  # Health insurance provider
     habeas_data = Column(Boolean, default=False, nullable=False)
     

@@ -39,13 +39,13 @@ class PatientBaseSchema(BaseSchema):
         description="Segundo apellido del paciente (opcional)",
         example="González"
     )
-    birth_date: date = Field(
-        ..., 
+    birth_date: Optional[date] = Field(
+        None, 
         description="Fecha de nacimiento del paciente en formato YYYY-MM-DD",
         example="1990-05-15"
     )
-    gender_id: int = Field(
-        ..., 
+    gender_id: Optional[int] = Field(
+        None, 
         description="ID del género del paciente (1: Masculino, 2: Femenino, 3: Otro)",
         example=1
     )
@@ -61,20 +61,14 @@ class PatientBaseSchema(BaseSchema):
         description="Número de documento de identidad del paciente",
         example="12345678"
     )
-    phone: Optional[str] = Field(
-        None, 
+    phone: str = Field(
+        ..., 
         max_length=20, 
-        description="Número de teléfono fijo del paciente",
-        example="+57-1-234-5678"
-    )
-    cell_phone: Optional[str] = Field(
-        None, 
-        max_length=20, 
-        description="Número de teléfono celular del paciente",
+        description="Número de teléfono del paciente",
         example="+57-300-123-4567"
     )
-    email: Optional[str] = Field(
-        None, 
+    email: str = Field(
+        ..., 
         max_length=255, 
         description="Dirección de correo electrónico del paciente",
         example="juan.perez@example.com"
@@ -134,7 +128,6 @@ class PatientCreateSchema(PatientBaseSchema):
                 "documentTypeId": 1,
                 "documentNumber": "12345678",
                 "phone": "+57-1-234-5678",
-                "cellPhone": "+57-300-123-4567",
                 "email": "juan.perez@example.com",
                 "epsId": "EPS001",
                 "habeasData": True,
@@ -161,10 +154,6 @@ class PatientCreateSchema(PatientBaseSchema):
         """Validate phone number format."""
         return EnhancedValidators.validate_phone(cls, v)
     
-    @validator('cell_phone')
-    def validate_cell_phone(cls, v):
-        """Validate cell phone number format."""
-        return EnhancedValidators.validate_cell_phone(cls, v)
     
     @validator('email')
     def validate_email(cls, v):
@@ -197,7 +186,6 @@ class PatientUpdateSchema(BaseSchema):
     document_type_id: Optional[int] = None
     document_number: Optional[str] = Field(None, min_length=1, max_length=50)
     phone: Optional[str] = Field(None, max_length=20)
-    cell_phone: Optional[str] = Field(None, max_length=20)
     email: Optional[str] = Field(None, max_length=255)
     eps_id: Optional[str] = Field(None, max_length=100)
     habeas_data: Optional[bool] = None
@@ -210,12 +198,6 @@ class PatientUpdateSchema(BaseSchema):
             return EnhancedValidators.validate_phone(cls, v)
         return v
     
-    @validator('cell_phone')
-    def validate_cell_phone(cls, v):
-        """Validate cell phone number format."""
-        if v is not None:
-            return EnhancedValidators.validate_cell_phone(cls, v)
-        return v
     
     @validator('email')
     def validate_email(cls, v):
@@ -254,7 +236,6 @@ class PatientResponseSchema(PatientBaseSchema):
                 "documentTypeId": 1,
                 "documentNumber": "12345678",
                 "phone": "+57-1-234-5678",
-                "cellPhone": "+57-300-123-4567",
                 "email": "juan.perez@example.com",
                 "epsId": "EPS001",
                 "habeasData": True,
@@ -292,7 +273,6 @@ class PatientSearchSchema(BaseSchema):
     document_number: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    cell_phone: Optional[str] = None
     page: int = Field(1, ge=1, description="Page number")
     size: int = Field(50, ge=1, le=100, description="Page size")
 
@@ -309,15 +289,14 @@ class SimplePatientCreateSchema(BaseSchema):
     
     first_name: str = Field(..., min_length=1, max_length=255)
     first_last_name: str = Field(..., min_length=1, max_length=255)
-    birth_date: date = Field(...)
-    gender_id: int = Field(...)
     document_type_id: int = Field(...)
     document_number: str = Field(..., min_length=1, max_length=50)
+    phone: str = Field(..., max_length=20)
+    email: str = Field(..., max_length=255)
     second_name: Optional[str] = Field(None, max_length=255)
     second_last_name: Optional[str] = Field(None, max_length=255)
-    phone: Optional[str] = Field(None, max_length=20)
-    cell_phone: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=255)
+    birth_date: Optional[date] = Field(None)
+    gender_id: Optional[int] = Field(None)
     eps_id: Optional[str] = Field(None, max_length=100)
     habeas_data: bool = Field(False)
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -325,23 +304,12 @@ class SimplePatientCreateSchema(BaseSchema):
     @validator('phone')
     def validate_phone(cls, v):
         """Validate phone number format."""
-        if v is not None:
-            return EnhancedValidators.validate_phone(cls, v)
-        return v
-    
-    @validator('cell_phone')
-    def validate_cell_phone(cls, v):
-        """Validate cell phone number format."""
-        if v is not None:
-            return EnhancedValidators.validate_cell_phone(cls, v)
-        return v
+        return EnhancedValidators.validate_phone(cls, v)
     
     @validator('email')
     def validate_email(cls, v):
         """Validate email format."""
-        if v is not None:
-            return EnhancedValidators.validate_email(cls, v)
-        return v
+        return EnhancedValidators.validate_email(cls, v)
     
     @validator('document_number')
     def validate_document_number(cls, v, values):
