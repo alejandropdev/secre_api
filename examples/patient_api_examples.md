@@ -20,8 +20,6 @@ curl -X POST "https://api.secre.com/v1/patients/" \
      -H "X-Api-Key: your-api-key-here" \
      -H "Content-Type: application/json" \
      -d '{
-       "eventType": "PATIENT",
-       "actionType": "CREATE",
        "first_name": "Juan Carlos",
        "first_last_name": "Pérez",
        "second_last_name": "García",
@@ -93,8 +91,6 @@ curl -X PATCH "https://api.secre.com/v1/patients/550e8400-e29b-41d4-a716-4466554
      -H "X-Api-Key: your-api-key-here" \
      -H "Content-Type: application/json" \
      -d '{
-       "eventType": "PATIENT",
-       "actionType": "UPDATE",
        "email": "juan.perez.updated@example.com",
        "customFields": {
          "emergency_contact": "María Pérez - +57-300-987-6543",

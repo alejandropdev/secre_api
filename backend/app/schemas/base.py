@@ -1,7 +1,6 @@
 """Base Pydantic schemas and common types."""
 
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, Optional
 from uuid import UUID
 
@@ -17,20 +16,6 @@ class BaseSchema(BaseModel):
             datetime: lambda v: v.isoformat(),
             UUID: lambda v: str(v),
         }
-
-
-class EventType(str, Enum):
-    """Event type enumeration."""
-    PATIENT = "PATIENT"
-    APPOINTMENT = "APPOINTMENT"
-
-
-class ActionType(str, Enum):
-    """Action type enumeration."""
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-    DELETE = "DELETE"
-    READ = "READ"
 
 
 class CustomFieldsSchema(BaseModel):

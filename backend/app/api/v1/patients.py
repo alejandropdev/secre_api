@@ -101,7 +101,7 @@ async def update_patient(
         )
     
     # Prepare update data
-    update_data = patient_data.dict(exclude_unset=True, exclude={'event_type', 'action_type'})
+    update_data = patient_data.dict(exclude_unset=True)
     
     # Check if document number is being changed and if it conflicts
     if 'document_number' in update_data or 'document_type_id' in update_data:
@@ -200,7 +200,7 @@ async def update_patient(
         )
     
     # Prepare update data
-    update_data = patient_data.dict(exclude_unset=True, exclude={'event_type', 'action_type'})
+    update_data = patient_data.dict(exclude_unset=True)
     
     # Check if document number is being changed and if it conflicts
     if 'document_number' in update_data or 'document_type_id' in update_data:

@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
 
-from app.schemas.base import ActionType, BaseSchema, CustomFieldsSchema, EventType
+from app.schemas.base import BaseSchema, CustomFieldsSchema
 from app.schemas.validators import EnhancedValidators
 
 
@@ -103,22 +103,9 @@ class PatientBaseSchema(BaseSchema):
 class PatientCreateSchema(PatientBaseSchema):
     """Schema for creating a patient (matches client payload)."""
     
-    event_type: EventType = Field(
-        EventType.PATIENT, 
-        description="Tipo de evento - debe ser 'PATIENT' para operaciones de paciente",
-        example="PATIENT"
-    )
-    action_type: ActionType = Field(
-        ActionType.CREATE, 
-        description="Tipo de acción - debe ser 'CREATE' para crear un nuevo paciente",
-        example="CREATE"
-    )
-    
     class Config:
         schema_extra = {
             "example": {
-                "eventType": "PATIENT",
-                "actionType": "CREATE",
                 "firstName": "Juan",
                 "secondName": "Carlos",
                 "firstLastName": "Pérez",
@@ -173,9 +160,6 @@ class PatientCreateSchema(PatientBaseSchema):
 
 class PatientUpdateSchema(BaseSchema):
     """Schema for updating a patient."""
-    
-    event_type: EventType = Field(EventType.PATIENT, description="Event type")
-    action_type: ActionType = Field(ActionType.UPDATE, description="Action type")
     
     first_name: Optional[str] = Field(None, min_length=1, max_length=255)
     second_name: Optional[str] = Field(None, max_length=255)
@@ -279,9 +263,6 @@ class PatientSearchSchema(BaseSchema):
 
 class PatientDeleteSchema(BaseSchema):
     """Schema for patient deletion."""
-    
-    event_type: EventType = Field(EventType.PATIENT, description="Event type")
-    action_type: ActionType = Field(ActionType.DELETE, description="Action type")
 
 
 class SimplePatientCreateSchema(BaseSchema):

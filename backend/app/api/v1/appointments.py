@@ -98,7 +98,7 @@ async def update_appointment(
         )
     
     # Prepare update data
-    update_data = appointment_data.dict(exclude_unset=True, exclude={'event_type', 'action_type'})
+    update_data = appointment_data.dict(exclude_unset=True)
     
     # Handle RFC3339 datetime fields if provided
     if 'start_appointment' in update_data and update_data['start_appointment']:
@@ -209,7 +209,7 @@ async def update_appointment(
         )
     
     # Prepare update data
-    update_data = appointment_data.dict(exclude_unset=True, exclude={'event_type', 'action_type'})
+    update_data = appointment_data.dict(exclude_unset=True)
     
     # Handle RFC3339 datetime fields if provided
     if 'start_appointment' in update_data and update_data['start_appointment']:

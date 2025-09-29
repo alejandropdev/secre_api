@@ -25,11 +25,9 @@ from app.schemas.auth import (
     TenantUpdateSchema,
 )
 from app.schemas.base import (
-    ActionType,
     BaseSchema,
     CustomFieldsSchema,
     ErrorResponseSchema,
-    EventType,
     TenantContextSchema,
     TimestampSchema,
 )
@@ -56,8 +54,6 @@ from app.schemas.patient import (
 __all__ = [
     # Base schemas
     "BaseSchema",
-    "EventType",
-    "ActionType",
     "CustomFieldsSchema",
     "TenantContextSchema",
     "TimestampSchema",

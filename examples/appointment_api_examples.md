@@ -20,8 +20,6 @@ curl -X POST "https://api.secre.com/v1/appointments/" \
      -H "X-Api-Key: your-api-key-here" \
      -H "Content-Type: application/json" \
      -d '{
-       "eventType": "APPOINTMENT",
-       "actionType": "CREATE",
        "startAppointment": "2024-02-15T10:00:00Z",
        "endAppointment": "2024-02-15T11:00:00Z",
        "patient_document_type_id": 1,
@@ -92,8 +90,6 @@ curl -X PATCH "https://api.secre.com/v1/appointments/550e8400-e29b-41d4-a716-446
      -H "X-Api-Key: your-api-key-here" \
      -H "Content-Type: application/json" \
      -d '{
-       "eventType": "APPOINTMENT",
-       "actionType": "UPDATE",
        "state": "CONFIRMED",
        "notification_state": "SENT",
        "customFields": {

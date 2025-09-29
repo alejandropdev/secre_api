@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
 
-from app.schemas.base import ActionType, BaseSchema, EventType
+from app.schemas.base import BaseSchema
 from app.schemas.validators import EnhancedValidators
 
 
@@ -101,17 +101,6 @@ class AppointmentBaseSchema(BaseSchema):
 class AppointmentCreateSchema(AppointmentBaseSchema):
     """Schema for creating an appointment (matches client payload)."""
     
-    event_type: EventType = Field(
-        EventType.APPOINTMENT, 
-        description="Tipo de evento - debe ser 'APPOINTMENT' para operaciones de cita",
-        example="APPOINTMENT"
-    )
-    action_type: ActionType = Field(
-        ActionType.CREATE, 
-        description="Tipo de acción - debe ser 'CREATE' para crear una nueva cita",
-        example="CREATE"
-    )
-    
     # RFC3339 format fields for client compatibility
     start_appointment: str = Field(
         ..., 
@@ -127,8 +116,6 @@ class AppointmentCreateSchema(AppointmentBaseSchema):
     class Config:
         schema_extra = {
             "example": {
-                "eventType": "APPOINTMENT",
-                "actionType": "CREATE",
                 "startAppointment": "2024-01-15T10:00:00-05:00",
                 "endAppointment": "2024-01-15T11:00:00-05:00",
                 "patientDocumentTypeId": 1,
@@ -170,9 +157,6 @@ class AppointmentCreateSchema(AppointmentBaseSchema):
 
 class AppointmentUpdateSchema(BaseSchema):
     """Schema for updating an appointment."""
-    
-    event_type: EventType = Field(EventType.APPOINTMENT, description="Event type")
-    action_type: ActionType = Field(ActionType.UPDATE, description="Action type")
     
     start_utc: Optional[datetime] = None
     end_utc: Optional[datetime] = None
@@ -249,9 +233,6 @@ class AppointmentSearchSchema(BaseSchema):
 
 class AppointmentDeleteSchema(BaseSchema):
     """Schema for appointment deletion."""
-    
-    event_type: EventType = Field(EventType.APPOINTMENT, description="Event type")
-    action_type: ActionType = Field(ActionType.DELETE, description="Action type")
 
 
 class SimpleAppointmentCreateSchema(BaseSchema):
