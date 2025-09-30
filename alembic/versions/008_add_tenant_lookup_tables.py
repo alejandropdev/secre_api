@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '008_add_tenant_lookup_tables'
-down_revision = '007_update_appointment_modality_state_to_ids'
+revision = '008'
+down_revision = '007'
 branch_labels = None
 depends_on = None
 
@@ -49,8 +49,31 @@ def upgrade() -> None:
     )
     
     # Add foreign key columns to appointment table
-    op.add_column('appointment', sa.Column('appointment_type_id', sa.Integer(), nullable=True))
-    op.add_column('appointment', sa.Column('clinic_id', sa.Integer(), nullable=True))
+    # Check if columns already exist before adding them
+    connection = op.get_bind()
+    
+    # Check if appointment_type_id column exists
+    result = connection.execute(sa.text("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'appointment' AND column_name = 'appointment_type_id'
+    """))
+    if not result.fetchone():
+        op.add_column('appointment', sa.Column('appointment_type_id', sa.Integer(), nullable=True))
+    
+    # Check if clinic_id column exists and is the right type
+    result = connection.execute(sa.text("""
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'appointment' AND column_name = 'clinic_id'
+    """))
+    clinic_id_info = result.fetchone()
+    if not clinic_id_info:
+        op.add_column('appointment', sa.Column('clinic_id', sa.Integer(), nullable=True))
+    elif clinic_id_info[1] != 'integer':
+        # Column exists but is wrong type, drop and recreate
+        op.drop_column('appointment', 'clinic_id')
+        op.add_column('appointment', sa.Column('clinic_id', sa.Integer(), nullable=True))
     
     # Create foreign key constraints
     op.create_foreign_key('fk_appointment_appointment_type', 'appointment', 'tenant_appointment_type', ['appointment_type_id'], ['id'])

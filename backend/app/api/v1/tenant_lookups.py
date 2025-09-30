@@ -8,9 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.dependencies import get_current_tenant, get_db
+from app.core.dependencies import get_current_tenant
+from app.db.session import get_db
 from app.core.exceptions import NotFoundAPIException, ValidationAPIException
-from app.core.types import TenantContext
+from app.middleware.auth import TenantContext
 from app.schemas.tenant_lookup import (
     TenantAppointmentTypeCreateSchema,
     TenantAppointmentTypeResponseSchema,
@@ -21,7 +22,6 @@ from app.schemas.tenant_lookup import (
     TenantLookupListResponseSchema,
 )
 from app.services.tenant_lookup_service import TenantLookupService
-from app.utils.schema_conversion import convert_tenant_lookups_to_response_list
 
 logger = logging.getLogger(__name__)
 

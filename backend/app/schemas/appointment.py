@@ -108,7 +108,7 @@ class AppointmentCreateSchema(AppointmentBaseSchema):
     )
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "startAppointment": "2024-01-15T10:00:00-05:00",
                 "endAppointment": "2024-01-15T11:00:00-05:00",

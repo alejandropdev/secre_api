@@ -20,7 +20,7 @@ class TenantAppointmentTypeCreateSchema(TenantAppointmentTypeBaseSchema):
     """Schema for creating a tenant appointment type."""
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "code": "CONSULTA_GENERAL",
                 "name": "Consulta General",
@@ -64,7 +64,7 @@ class TenantClinicCreateSchema(TenantClinicBaseSchema):
     """Schema for creating a tenant clinic."""
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "code": "CLINIC_001",
                 "name": "Clínica Principal",
