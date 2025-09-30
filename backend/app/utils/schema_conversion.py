@@ -61,15 +61,19 @@ def convert_appointment_to_response(appointment: Appointment) -> AppointmentResp
         patient_document_number=appointment.patient_document_number,
         doctor_document_type_id=appointment.doctor_document_type_id,
         doctor_document_number=appointment.doctor_document_number,
-        modality=appointment.modality,
-        state=appointment.state,
+        modality_id=appointment.modality_id,
+        state_id=appointment.state_id,
         notification_state=appointment.notification_state,
-        appointment_type=appointment.appointment_type,
+        appointment_type_id=appointment.appointment_type_id,
         clinic_id=appointment.clinic_id,
         comment=appointment.comment,
         custom_fields=appointment.custom_fields,
         created_at=appointment.created_at.isoformat(),
         updated_at=appointment.updated_at.isoformat(),
+        modality_name=appointment.modality.name if appointment.modality else None,
+        state_name=appointment.state.name if appointment.state else None,
+        appointment_type_name=appointment.appointment_type.name if appointment.appointment_type else None,
+        clinic_name=appointment.clinic.name if appointment.clinic else None,
     )
 
 

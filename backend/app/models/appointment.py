@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base, TenantMixin, TimestampMixin
 
@@ -33,15 +34,21 @@ class Appointment(Base, TenantMixin, TimestampMixin):
     doctor_document_number = Column(String(50), nullable=False)
     
     # Appointment details
-    modality = Column(String(50), nullable=False)  # e.g., "in-person", "virtual", "phone"
-    state = Column(String(50), nullable=False)  # e.g., "scheduled", "confirmed", "cancelled", "completed"
+    modality_id = Column(Integer, ForeignKey("appointment_modality.id"), nullable=False)
+    state_id = Column(Integer, ForeignKey("appointment_state.id"), nullable=False)
     notification_state = Column(String(50), nullable=True)  # e.g., "sent", "pending", "failed"
-    appointment_type = Column(String(100), nullable=True)  # e.g., "consultation", "follow-up", "emergency"
-    clinic_id = Column(String(100), nullable=True)
+    appointment_type_id = Column(Integer, ForeignKey("tenant_appointment_type.id"), nullable=True)
+    clinic_id = Column(Integer, ForeignKey("tenant_clinic.id"), nullable=True)
     comment = Column(Text, nullable=True)
     
     # Flexible custom fields for tenant-specific data
     custom_fields = Column(JSONB, nullable=False, default=dict)
+    
+    # Relationships
+    modality = relationship("AppointmentModality", foreign_keys=[modality_id])
+    state = relationship("AppointmentState", foreign_keys=[state_id])
+    appointment_type = relationship("TenantAppointmentType", foreign_keys=[appointment_type_id])
+    clinic = relationship("TenantClinic", foreign_keys=[clinic_id])
     
     def __repr__(self) -> str:
         return f"<Appointment(id={self.id}, start={self.start_utc}, patient_doc={self.patient_document_number})>"

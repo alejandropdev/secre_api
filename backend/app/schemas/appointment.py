@@ -47,19 +47,15 @@ class AppointmentBaseSchema(BaseSchema):
         description="Número de documento del médico",
         example="87654321"
     )
-    modality: str = Field(
+    modality_id: int = Field(
         ..., 
-        min_length=1, 
-        max_length=50, 
-        description="Modalidad de la cita (presencial, virtual, telemedicina, domicilio)",
-        example="presencial"
+        description="ID de la modalidad de la cita",
+        example=1
     )
-    state: str = Field(
+    state_id: int = Field(
         ..., 
-        min_length=1, 
-        max_length=50, 
-        description="Estado de la cita (scheduled, confirmed, cancelled, completed)",
-        example="scheduled"
+        description="ID del estado de la cita",
+        example=1
     )
     notification_state: Optional[str] = Field(
         None, 
@@ -67,17 +63,15 @@ class AppointmentBaseSchema(BaseSchema):
         description="Estado de notificación (pending, sent, failed)",
         example="pending"
     )
-    appointment_type: Optional[str] = Field(
+    appointment_type_id: Optional[int] = Field(
         None, 
-        max_length=100, 
-        description="Tipo de cita (consulta_general, especialista, control, urgencia)",
-        example="consulta_general"
+        description="ID del tipo de cita específico del inquilino",
+        example=1
     )
-    clinic_id: Optional[str] = Field(
+    clinic_id: Optional[int] = Field(
         None, 
-        max_length=100, 
-        description="ID de la clínica o consultorio",
-        example="CLINIC001"
+        description="ID de la clínica específica del inquilino",
+        example=1
     )
     comment: Optional[str] = Field(
         None, 
@@ -122,11 +116,11 @@ class AppointmentCreateSchema(AppointmentBaseSchema):
                 "patientDocumentNumber": "12345678",
                 "doctorDocumentTypeId": 1,
                 "doctorDocumentNumber": "87654321",
-                "modality": "presencial",
-                "state": "scheduled",
+                "modalityId": 1,
+                "stateId": 1,
                 "notificationState": "pending",
-                "appointmentType": "consulta_general",
-                "clinicId": "CLINIC001",
+                "appointmentTypeId": 1,
+                "clinicId": 1,
                 "comment": "Consulta de rutina - paciente alérgico a penicilina",
                 "customFields": {
                     "room": "A101",
@@ -164,11 +158,11 @@ class AppointmentUpdateSchema(BaseSchema):
     patient_document_number: Optional[str] = Field(None, min_length=1, max_length=50)
     doctor_document_type_id: Optional[int] = None
     doctor_document_number: Optional[str] = Field(None, min_length=1, max_length=50)
-    modality: Optional[str] = Field(None, min_length=1, max_length=50)
-    state: Optional[str] = Field(None, min_length=1, max_length=50)
+    modality_id: Optional[int] = None
+    state_id: Optional[int] = None
     notification_state: Optional[str] = Field(None, max_length=50)
-    appointment_type: Optional[str] = Field(None, max_length=100)
-    clinic_id: Optional[str] = Field(None, max_length=100)
+    appointment_type_id: Optional[int] = None
+    clinic_id: Optional[int] = None
     comment: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
     
@@ -205,6 +199,10 @@ class AppointmentResponseSchema(AppointmentBaseSchema):
     tenant_id: UUID
     created_at: str
     updated_at: str
+    modality_name: Optional[str] = Field(None, description="Name of the appointment modality")
+    state_name: Optional[str] = Field(None, description="Name of the appointment state")
+    appointment_type_name: Optional[str] = Field(None, description="Name of the appointment type")
+    clinic_name: Optional[str] = Field(None, description="Name of the clinic")
 
 
 class AppointmentListResponseSchema(BaseSchema):
@@ -223,8 +221,8 @@ class AppointmentSearchSchema(BaseSchema):
     
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    modality: Optional[str] = None
-    state: Optional[str] = None
+    modality_id: Optional[int] = None
+    state_id: Optional[int] = None
     patient_document_number: Optional[str] = None
     doctor_document_number: Optional[str] = None
     page: int = Field(1, ge=1, description="Page number")
@@ -244,10 +242,10 @@ class SimpleAppointmentCreateSchema(BaseSchema):
     patient_document_number: str = Field(..., description="Patient document number")
     doctor_document_type_id: int = Field(..., description="Doctor document type ID")
     doctor_document_number: str = Field(..., description="Doctor document number")
-    modality: str = Field(default="presencial", description="Appointment modality")
-    state: str = Field(default="scheduled", description="Appointment state")
-    appointment_type: str = Field(default="consulta", description="Appointment type")
-    clinic_id: Optional[str] = Field(None, description="Clinic ID")
+    modality_id: int = Field(..., description="Appointment modality ID")
+    state_id: int = Field(..., description="Appointment state ID")
+    appointment_type_id: Optional[int] = Field(None, description="Appointment type ID")
+    clinic_id: Optional[int] = Field(None, description="Clinic ID")
     comment: Optional[str] = Field(None, description="Appointment comment")
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
     

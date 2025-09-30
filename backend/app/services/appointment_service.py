@@ -7,6 +7,7 @@ from uuid import UUID
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import NotFoundAPIException, ValidationAPIException
 from app.models.appointment import Appointment
@@ -31,11 +32,11 @@ class AppointmentService:
         patient_document_number: str,
         doctor_document_type_id: int,
         doctor_document_number: str,
-        modality: str,
-        state: str,
+        modality_id: int,
+        state_id: int,
         notification_state: Optional[str] = None,
-        appointment_type: Optional[str] = None,
-        clinic_id: Optional[str] = None,
+        appointment_type_id: Optional[int] = None,
+        clinic_id: Optional[int] = None,
         comment: Optional[str] = None,
         custom_fields: Optional[Dict[str, Any]] = None,
         request_context: Optional[Dict[str, Any]] = None,
@@ -58,10 +59,10 @@ class AppointmentService:
                 patient_document_number=patient_document_number,
                 doctor_document_type_id=doctor_document_type_id,
                 doctor_document_number=doctor_document_number,
-                modality=modality,
-                state=state,
+                modality_id=modality_id,
+                state_id=state_id,
                 notification_state=notification_state,
-                appointment_type=appointment_type,
+                appointment_type_id=appointment_type_id,
                 clinic_id=clinic_id,
                 comment=comment,
                 custom_fields=custom_fields or {},
@@ -93,7 +94,14 @@ class AppointmentService:
     async def get_appointment_by_id(self, appointment_id: UUID) -> Optional[Appointment]:
         """Get appointment by ID."""
         result = await self.db.execute(
-            select(Appointment).where(Appointment.id == appointment_id)
+            select(Appointment)
+            .options(
+                selectinload(Appointment.modality),
+                selectinload(Appointment.state),
+                selectinload(Appointment.appointment_type),
+                selectinload(Appointment.clinic)
+            )
+            .where(Appointment.id == appointment_id)
         )
         return result.scalar_one_or_none()
     
@@ -101,8 +109,8 @@ class AppointmentService:
         self,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        modality: Optional[str] = None,
-        state: Optional[str] = None,
+        modality_id: Optional[int] = None,
+        state_id: Optional[int] = None,
         patient_document_number: Optional[str] = None,
         doctor_document_number: Optional[str] = None,
         limit: int = 50,
@@ -110,17 +118,22 @@ class AppointmentService:
     ) -> List[Appointment]:
         """Search appointments with filters."""
         
-        query = select(Appointment)
+        query = select(Appointment).options(
+            selectinload(Appointment.modality),
+            selectinload(Appointment.state),
+            selectinload(Appointment.appointment_type),
+            selectinload(Appointment.clinic)
+        )
         conditions = []
         
         if start_date:
             conditions.append(Appointment.start_utc >= start_date)
         if end_date:
             conditions.append(Appointment.end_utc <= end_date)
-        if modality:
-            conditions.append(Appointment.modality == modality)
-        if state:
-            conditions.append(Appointment.state == state)
+        if modality_id:
+            conditions.append(Appointment.modality_id == modality_id)
+        if state_id:
+            conditions.append(Appointment.state_id == state_id)
         if patient_document_number:
             conditions.append(Appointment.patient_document_number == patient_document_number)
         if doctor_document_number:

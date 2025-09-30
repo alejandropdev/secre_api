@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin, appointments, auth, doctor_availability, health, lookup, patients
+from app.api.v1 import admin, appointments, auth, doctor_availability, health, lookup, patients, tenant_lookups
 
 router = APIRouter()
 
@@ -14,3 +14,4 @@ router.include_router(health.router)
 router.include_router(lookup.router)
 router.include_router(patients.router)
 router.include_router(appointments.router)
+router.include_router(tenant_lookups.router)
