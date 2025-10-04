@@ -183,6 +183,57 @@ async def delete_appointment(
     return {"message": "Appointment deleted successfully"}
 
 
+@router.get("/by-date-range", response_model=AppointmentListResponseSchema)
+async def get_appointments_by_date_range(
+    start_date: datetime = Query(..., description="Start date for range"),
+    end_date: datetime = Query(..., description="End date for range"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of appointments"),
+    offset: int = Query(0, ge=0, description="Number of appointments to skip"),
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Get appointments within a specific date range."""
+    
+    appointment_service = AppointmentService(db)
+    
+    # Validate date range
+    if end_date <= start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be after start date"
+        )
+    
+    # Get appointments in date range
+    appointments = await appointment_service.get_appointments_by_date_range(
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+    
+    # Get total count for pagination
+    total_appointments = await appointment_service.get_appointments_by_date_range(
+        start_date=start_date,
+        end_date=end_date,
+        limit=1000,
+        offset=0,
+    )
+    
+    total = len(total_appointments)
+    page = (offset // limit) + 1
+    has_next = (offset + limit) < total
+    has_prev = offset > 0
+    
+    return AppointmentListResponseSchema(
+        appointments=convert_appointments_to_response_list(appointments),
+        total=total,
+        page=page,
+        size=limit,
+        has_next=has_next,
+        has_prev=has_prev,
+    )
+
+
 @router.get("/{appointment_id}", response_model=AppointmentResponseSchema)
 async def get_appointment(
     appointment_id: UUID,
@@ -393,52 +444,3 @@ async def search_appointments(
     )
 
 
-@router.get("/by-date-range", response_model=AppointmentListResponseSchema)
-async def get_appointments_by_date_range(
-    start_date: datetime = Query(..., description="Start date for range"),
-    end_date: datetime = Query(..., description="End date for range"),
-    limit: int = Query(100, ge=1, le=500, description="Maximum number of appointments"),
-    offset: int = Query(0, ge=0, description="Number of appointments to skip"),
-    db: AsyncSession = Depends(get_db),
-    current_tenant: TenantContext = Depends(get_current_tenant),
-):
-    """Get appointments within a specific date range."""
-    
-    appointment_service = AppointmentService(db)
-    
-    # Validate date range
-    if end_date <= start_date:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="End date must be after start date"
-        )
-    
-    # Get appointments in date range
-    appointments = await appointment_service.get_appointments_by_date_range(
-        start_date=start_date,
-        end_date=end_date,
-        limit=limit,
-        offset=offset,
-    )
-    
-    # Get total count for pagination
-    total_appointments = await appointment_service.get_appointments_by_date_range(
-        start_date=start_date,
-        end_date=end_date,
-        limit=1000,
-        offset=0,
-    )
-    
-    total = len(total_appointments)
-    page = (offset // limit) + 1
-    has_next = (offset + limit) < total
-    has_prev = offset > 0
-    
-    return AppointmentListResponseSchema(
-        appointments=convert_appointments_to_response_list(appointments),
-        total=total,
-        page=page,
-        size=limit,
-        has_next=has_next,
-        has_prev=has_prev,
-    )
