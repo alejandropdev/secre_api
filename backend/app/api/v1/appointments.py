@@ -72,10 +72,25 @@ async def create_appointment_simple(
     await db.commit()
     await db.refresh(appointment)
     
+    # Eager load related objects to avoid lazy loading issues
+    from sqlalchemy.orm import selectinload
+    from sqlalchemy import select
+    
+    # Reload the appointment with related objects
+    stmt = select(Appointment).options(
+        selectinload(Appointment.modality),
+        selectinload(Appointment.state),
+        selectinload(Appointment.appointment_type),
+        selectinload(Appointment.clinic)
+    ).where(Appointment.id == appointment.id)
+    
+    result = await db.execute(stmt)
+    appointment_with_relations = result.scalar_one()
+    
     # Skip audit logging for simplified endpoint
     logger.info(f"Created appointment {appointment.id} for tenant {current_tenant.tenant_id}")
     
-    return convert_appointments_to_response_list([appointment])[0]
+    return convert_appointments_to_response_list([appointment_with_relations])[0]
 
 
 @router.patch("/{appointment_id}", response_model=AppointmentResponseSchema)
