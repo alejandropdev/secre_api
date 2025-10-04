@@ -193,9 +193,20 @@ class AppointmentService:
                 request_context=request_context,
             )
             
+            # Reload appointment with eager loaded relations to avoid lazy loading issues
+            stmt = select(Appointment).options(
+                selectinload(Appointment.modality),
+                selectinload(Appointment.state),
+                selectinload(Appointment.appointment_type),
+                selectinload(Appointment.clinic)
+            ).where(Appointment.id == appointment_id)
+            
+            result = await self.db.execute(stmt)
+            appointment_with_relations = result.scalar_one()
+            
             logger.info(f"Updated appointment {appointment_id}")
             
-            return appointment
+            return appointment_with_relations
             
         except NotFoundAPIException:
             raise
@@ -255,7 +266,12 @@ class AppointmentService:
     ) -> List[Appointment]:
         """Get appointments within a date range."""
         
-        query = select(Appointment).where(
+        query = select(Appointment).options(
+            selectinload(Appointment.modality),
+            selectinload(Appointment.state),
+            selectinload(Appointment.appointment_type),
+            selectinload(Appointment.clinic)
+        ).where(
             and_(
                 Appointment.start_utc >= start_date,
                 Appointment.end_utc <= end_date
