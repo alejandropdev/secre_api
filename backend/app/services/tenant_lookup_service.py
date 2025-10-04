@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundAPIException, ValidationAPIException
 from app.models.tenant_lookup import TenantAppointmentType, TenantClinic
 from app.services.audit_service import AuditService
+from app.utils.schema_conversion import serialize_model_for_audit
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class TenantLookupService:
                 resource_type="tenant_appointment_type",
                 resource_id=appointment_type.id,
                 action="create",
-                after_snapshot=appointment_type.__dict__,
+                after_snapshot=serialize_model_for_audit(appointment_type),
                 request_context=request_context,
             )
             
@@ -232,7 +233,7 @@ class TenantLookupService:
                 resource_type="tenant_clinic",
                 resource_id=clinic.id,
                 action="create",
-                after_snapshot=clinic.__dict__,
+                after_snapshot=serialize_model_for_audit(clinic),
                 request_context=request_context,
             )
             

@@ -1,5 +1,6 @@
 """Utilities for converting between database models and Pydantic schemas."""
 
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -209,3 +210,37 @@ def convert_appointment_modalities_to_schema_list(modalities: List[AppointmentMo
 def convert_appointment_states_to_schema_list(states: List[AppointmentState]) -> List[AppointmentStateSchema]:
     """Convert list of AppointmentState models to list of AppointmentStateSchema."""
     return [convert_appointment_state_to_schema(state) for state in states]
+
+
+def serialize_model_for_audit(model: Any) -> Dict[str, Any]:
+    """Safely serialize a SQLAlchemy model for audit logging.
+    
+    This function extracts only the serializable attributes from a SQLAlchemy model,
+    excluding internal SQLAlchemy state objects that are not JSON serializable.
+    
+    Args:
+        model: SQLAlchemy model instance
+        
+    Returns:
+        Dictionary containing only the serializable model attributes
+    """
+    if not model:
+        return {}
+    
+    # Get all column attributes from the model
+    serializable_data = {}
+    
+    for column in model.__table__.columns:
+        value = getattr(model, column.name, None)
+        
+        # Handle datetime objects
+        if isinstance(value, datetime):
+            serializable_data[column.name] = value.isoformat()
+        # Handle UUID objects
+        elif isinstance(value, UUID):
+            serializable_data[column.name] = str(value)
+        # Handle other serializable types
+        elif value is not None and not hasattr(value, '__dict__'):
+            serializable_data[column.name] = value
+    
+    return serializable_data
