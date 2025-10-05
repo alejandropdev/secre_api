@@ -13,6 +13,7 @@ from app.core.exceptions import (
 )
 from app.core.logging import setup_logging
 from app.core.openapi import get_openapi_schema
+from app.middleware.api_usage_tracking import ApiUsageTrackingMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.rls import RLSMiddleware
 
@@ -109,6 +110,7 @@ app = FastAPI(
 
 # Add middleware (order matters - first added is outermost)
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(ApiUsageTrackingMiddleware)  # Track API usage
 app.add_middleware(RLSMiddleware)
 app.add_middleware(
     CORSMiddleware,

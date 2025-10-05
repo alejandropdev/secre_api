@@ -32,6 +32,14 @@ class ApiKeyResponseSchema(BaseSchema):
         return self.revoked_at is not None
 
 
+class ApiKeyWithUsageSchema(ApiKeyResponseSchema):
+    """Schema for API key responses with usage summary."""
+    
+    total_requests_30d: Optional[int] = Field(None, description="Total requests in last 30 days")
+    avg_response_time_ms: Optional[float] = Field(None, description="Average response time in milliseconds")
+    most_used_endpoint: Optional[str] = Field(None, description="Most frequently used endpoint")
+
+
 class ApiKeyCreateResponseSchema(BaseSchema):
     """Schema for API key creation response (includes plaintext key)."""
     

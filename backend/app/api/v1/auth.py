@@ -19,8 +19,15 @@ from app.schemas.auth import (
     TenantResponseSchema,
     TenantUpdateSchema,
 )
+from app.schemas.api_key_usage import (
+    ApiKeyUsageStatsSchema,
+    TenantUsageStatsResponseSchema,
+    TopEndpointsResponseSchema,
+    UsageStatsResponseSchema,
+)
 from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.services.api_key_service import ApiKeyService
+from app.services.api_key_usage_service import ApiKeyUsageService
 from app.services.tenant_service import TenantService
 from app.utils.schema_conversion import (
     convert_api_keys_to_response_list,
@@ -207,7 +214,16 @@ async def list_api_keys(
     api_key_service = ApiKeyService(db)
     
     # If no tenant_id specified, use current tenant
-    target_tenant_id = tenant_id or UUID(current_tenant.tenant_id)
+    if tenant_id:
+        target_tenant_id = tenant_id
+    elif current_tenant.tenant_id == "master":
+        # Master API key - require tenant_id parameter
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Master API key requires tenant_id parameter to list API keys"
+        )
+    else:
+        target_tenant_id = UUID(current_tenant.tenant_id)
     
     # Verify tenant exists and user has access
     tenant_service = TenantService(db)
@@ -274,4 +290,77 @@ async def get_api_key(
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Get API key endpoint not yet implemented"
+    )
+
+
+# API Usage Statistics Endpoints
+@router.get("/api-keys/{api_key_id}/usage", response_model=UsageStatsResponseSchema)
+async def get_api_key_usage_stats(
+    api_key_id: UUID,
+    days: int = 30,
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Get comprehensive usage statistics for a specific API key."""
+    
+    usage_service = ApiKeyUsageService(db)
+    
+    # Get usage statistics
+    stats = await usage_service.get_api_key_usage_stats(
+        api_key_id=api_key_id,
+        days=days,
+    )
+    
+    return UsageStatsResponseSchema(stats=stats)
+
+
+@router.get("/tenants/{tenant_id}/usage", response_model=TenantUsageStatsResponseSchema)
+async def get_tenant_usage_stats(
+    tenant_id: UUID,
+    days: int = 30,
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Get usage statistics for all API keys in a tenant."""
+    
+    usage_service = ApiKeyUsageService(db)
+    
+    # Get tenant usage statistics
+    stats = await usage_service.get_tenant_usage_stats(
+        tenant_id=tenant_id,
+        days=days,
+    )
+    
+    return TenantUsageStatsResponseSchema(stats=stats)
+
+
+@router.get("/usage/top-endpoints", response_model=TopEndpointsResponseSchema)
+async def get_top_endpoints(
+    days: int = 7,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """Get top endpoints by usage across all tenants or current tenant."""
+    
+    usage_service = ApiKeyUsageService(db)
+    
+    # Get top endpoints (filtered by current tenant)
+    if current_tenant.tenant_id == "master":
+        # Master API key - get top endpoints across all tenants
+        endpoints = await usage_service.get_top_endpoints(
+            tenant_id=None,
+            days=days,
+            limit=limit,
+        )
+    else:
+        endpoints = await usage_service.get_top_endpoints(
+            tenant_id=UUID(current_tenant.tenant_id),
+            days=days,
+            limit=limit,
+        )
+    
+    return TopEndpointsResponseSchema(
+        endpoints=endpoints,
+        period_days=days,
     )
