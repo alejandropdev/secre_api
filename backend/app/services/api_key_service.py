@@ -66,6 +66,14 @@ class ApiKeyService:
         )
         return result.scalars().all()
     
+    async def get_all_api_keys(self) -> List[ApiKey]:
+        """Get all API keys across all tenants (master API key only)."""
+        result = await self.db.execute(
+            select(ApiKey)
+            .order_by(ApiKey.created_at.desc())
+        )
+        return result.scalars().all()
+    
     async def revoke_api_key(self, api_key_id: UUID) -> bool:
         """Revoke an API key."""
         result = await self.db.execute(

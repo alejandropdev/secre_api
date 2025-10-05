@@ -213,29 +213,42 @@ async def list_api_keys(
     
     api_key_service = ApiKeyService(db)
     
-    # If no tenant_id specified, use current tenant
+    # Handle different scenarios for getting API keys
     if tenant_id:
+        # Specific tenant requested
         target_tenant_id = tenant_id
+        
+        # Verify tenant exists and user has access
+        tenant_service = TenantService(db)
+        tenant = await tenant_service.get_tenant_by_id(target_tenant_id)
+        if not tenant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tenant not found"
+            )
+        
+        # Get API keys for specific tenant
+        api_keys = await api_key_service.get_api_keys_by_tenant(target_tenant_id)
+        
     elif current_tenant.tenant_id == "master":
-        # Master API key - require tenant_id parameter
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Master API key requires tenant_id parameter to list API keys"
-        )
+        # Master API key - get all API keys across all tenants
+        api_keys = await api_key_service.get_all_api_keys()
+        
     else:
+        # Regular tenant API key - get keys for current tenant
         target_tenant_id = UUID(current_tenant.tenant_id)
-    
-    # Verify tenant exists and user has access
-    tenant_service = TenantService(db)
-    tenant = await tenant_service.get_tenant_by_id(target_tenant_id)
-    if not tenant:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tenant not found"
-        )
-    
-    # Get API keys for tenant
-    api_keys = await api_key_service.get_api_keys_by_tenant(target_tenant_id)
+        
+        # Verify tenant exists
+        tenant_service = TenantService(db)
+        tenant = await tenant_service.get_tenant_by_id(target_tenant_id)
+        if not tenant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tenant not found"
+            )
+        
+        # Get API keys for current tenant
+        api_keys = await api_key_service.get_api_keys_by_tenant(target_tenant_id)
     
     # Simple pagination
     start_idx = (page - 1) * size

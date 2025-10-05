@@ -160,6 +160,21 @@ GET /v1/auth/api-keys?tenant_id={tenant_id}&page=1&size=50
 X-Api-Key: {your_api_key}
 ```
 
+**Query Parameters:**
+- `tenant_id`: (Optional) Specific tenant ID to list API keys for. If not provided:
+  - **Master API Key**: Lists all API keys across all tenants
+  - **Regular API Key**: Lists API keys for the current tenant only
+- `page`: Page number (default: 1)
+- `size`: Page size (default: 50, max: 100)
+
+**Master API Key Behavior:**
+- Without `tenant_id`: Returns all API keys across all tenants
+- With `tenant_id`: Returns API keys for the specified tenant
+
+**Regular API Key Behavior:**
+- Without `tenant_id`: Returns API keys for the current tenant
+- With `tenant_id`: Returns API keys for the specified tenant (if authorized)
+
 ### Revoke API Key
 ```http
 POST /v1/auth/api-keys/{api_key_id}/revoke
@@ -277,6 +292,10 @@ X-Api-Key: {your_api_key}
 **Query Parameters:**
 - `days`: Number of days to analyze (default: 7, max: 30)
 - `limit`: Maximum number of endpoints to return (default: 10, max: 50)
+
+**Behavior:**
+- **Master API Key**: Returns top endpoints across all tenants
+- **Regular API Key**: Returns top endpoints for the current tenant only
 
 **Response:**
 ```json
