@@ -4,7 +4,7 @@ from datetime import datetime, time
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from app.schemas.base import BaseSchema
 
@@ -43,10 +43,34 @@ class DoctorBlockedTimeCreateSchema(BaseSchema):
     
     doctor_document_type_id: int = Field(..., description="Doctor document type ID")
     doctor_document_number: str = Field(..., description="Doctor document number")
-    start_datetime: str = Field(..., description="Start datetime in ISO format")
-    end_datetime: str = Field(..., description="End datetime in ISO format")
+    start_datetime: str = Field(..., description="Start datetime in ISO format. If no timezone is specified, assumes UTC (e.g., 2024-01-15T10:00:00 or 2024-01-15T10:00:00Z)")
+    end_datetime: str = Field(..., description="End datetime in ISO format. If no timezone is specified, assumes UTC (e.g., 2024-01-15T11:00:00 or 2024-01-15T11:00:00Z)")
     reason: Optional[str] = Field(None, description="Reason for blocking")
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    @validator('start_datetime', 'end_datetime')
+    def validate_datetime(cls, v):
+        """Validate datetime format and convert to UTC."""
+        try:
+            from datetime import datetime
+            import pytz
+            
+            # Parse the datetime string
+            if v.endswith('Z'):
+                # UTC timezone
+                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
+            elif '+' in v or v.count('-') > 2:
+                # Has timezone info
+                dt = datetime.fromisoformat(v)
+            else:
+                # No timezone info - assume it's UTC to maintain backward compatibility
+                dt = datetime.fromisoformat(v)
+                # Mark as UTC
+                dt = dt.replace(tzinfo=pytz.UTC)
+            
+            return dt
+        except ValueError:
+            raise ValueError(f"Invalid datetime format: {v}. Use ISO format like '2024-01-15T10:00:00' or '2024-01-15T10:00:00Z'")
 
 
 class DoctorBlockedTimeResponseSchema(BaseSchema):

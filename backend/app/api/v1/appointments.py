@@ -48,6 +48,16 @@ async def create_appointment_simple(
             detail="End time must be after start time"
         )
     
+    # Check for overlapping appointments for the same doctor
+    await appointment_service._check_appointment_overlap(
+        tenant_id=UUID(current_tenant.tenant_id),
+        doctor_document_type_id=appointment_data.doctor_document_type_id,
+        doctor_document_number=appointment_data.doctor_document_number,
+        start_utc=appointment_data.start_datetime,
+        end_utc=appointment_data.end_datetime,
+        exclude_appointment_id=None
+    )
+    
     # Create appointment directly without going through the service's audit logging
     from app.models.appointment import Appointment
     

@@ -92,15 +92,9 @@ async def create_blocked_time(
     
     availability_service = DoctorAvailabilityService(db)
     
-    # Parse datetime strings
-    try:
-        start_datetime = datetime.fromisoformat(blocked_data.start_datetime.replace('Z', '+00:00'))
-        end_datetime = datetime.fromisoformat(blocked_data.end_datetime.replace('Z', '+00:00'))
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid datetime format. Use ISO format (e.g., 2024-01-15T10:00:00)"
-        )
+    # Datetimes are already validated and converted by the schema
+    start_datetime = blocked_data.start_datetime
+    end_datetime = blocked_data.end_datetime
     
     # Validate datetime range
     if start_datetime >= end_datetime:
@@ -344,14 +338,28 @@ async def check_time_availability(
     
     availability_service = DoctorAvailabilityService(db)
     
-    # Parse datetime strings
+    # Parse datetime strings with proper timezone handling
     try:
-        start_dt = datetime.fromisoformat(start_datetime.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_datetime.replace('Z', '+00:00'))
+        import pytz
+        if start_datetime.endswith('Z'):
+            start_dt = datetime.fromisoformat(start_datetime.replace('Z', '+00:00'))
+        elif '+' in start_datetime or start_datetime.count('-') > 2:
+            start_dt = datetime.fromisoformat(start_datetime)
+        else:
+            start_dt = datetime.fromisoformat(start_datetime)
+            start_dt = start_dt.replace(tzinfo=pytz.UTC)
+            
+        if end_datetime.endswith('Z'):
+            end_dt = datetime.fromisoformat(end_datetime.replace('Z', '+00:00'))
+        elif '+' in end_datetime or end_datetime.count('-') > 2:
+            end_dt = datetime.fromisoformat(end_datetime)
+        else:
+            end_dt = datetime.fromisoformat(end_datetime)
+            end_dt = end_dt.replace(tzinfo=pytz.UTC)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid datetime format. Use ISO format (e.g., 2024-01-15T10:00:00)"
+            detail="Invalid datetime format. Use ISO format (e.g., 2024-01-15T10:00:00 or 2024-01-15T10:00:00Z)"
         )
     
     is_available = await availability_service.is_time_available(

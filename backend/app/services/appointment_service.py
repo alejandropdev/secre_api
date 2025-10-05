@@ -23,6 +23,47 @@ class AppointmentService:
         self.db = db
         self.audit_service = AuditService(db)
     
+    async def _check_appointment_overlap(
+        self,
+        tenant_id: UUID,
+        doctor_document_type_id: int,
+        doctor_document_number: str,
+        start_utc: datetime,
+        end_utc: datetime,
+        exclude_appointment_id: Optional[UUID] = None,
+    ) -> None:
+        """Check for overlapping appointments for the same doctor."""
+        
+        # Query for overlapping appointments
+        query = select(Appointment).where(
+            and_(
+                Appointment.tenant_id == tenant_id,
+                Appointment.doctor_document_type_id == doctor_document_type_id,
+                Appointment.doctor_document_number == doctor_document_number,
+                # Overlap condition: new appointment starts before existing ends AND new appointment ends after existing starts
+                Appointment.start_utc < end_utc,
+                Appointment.end_utc > start_utc,
+            )
+        )
+        
+        # Exclude the appointment being updated (if any)
+        if exclude_appointment_id:
+            query = query.where(Appointment.id != exclude_appointment_id)
+        
+        result = await self.db.execute(query)
+        overlapping_appointments = result.scalars().all()
+        
+        if overlapping_appointments:
+            # Format the overlapping appointment times for the error message
+            overlap_times = []
+            for apt in overlapping_appointments:
+                overlap_times.append(f"{apt.start_utc.isoformat()} - {apt.end_utc.isoformat()}")
+            
+            raise ValidationAPIException(
+                f"Appointment time conflicts with existing appointment(s): {', '.join(overlap_times)}",
+                field="start_utc"
+            )
+    
     async def create_appointment(
         self,
         tenant_id: UUID,
@@ -50,6 +91,16 @@ class AppointmentService:
                     "End time must be after start time",
                     field="end_utc"
                 )
+            
+            # Check for overlapping appointments for the same doctor
+            await self._check_appointment_overlap(
+                tenant_id=tenant_id,
+                doctor_document_type_id=doctor_document_type_id,
+                doctor_document_number=doctor_document_number,
+                start_utc=start_utc,
+                end_utc=end_utc,
+                exclude_appointment_id=None
+            )
             
             appointment = Appointment(
                 tenant_id=tenant_id,
@@ -179,6 +230,16 @@ class AppointmentService:
                         "End time must be after start time",
                         field="end_utc"
                     )
+                
+                # Check for overlapping appointments when times are updated
+                await self._check_appointment_overlap(
+                    tenant_id=appointment.tenant_id,
+                    doctor_document_type_id=appointment.doctor_document_type_id,
+                    doctor_document_number=appointment.doctor_document_number,
+                    start_utc=appointment.start_utc,
+                    end_utc=appointment.end_utc,
+                    exclude_appointment_id=appointment_id
+                )
             
             await self.db.commit()
             await self.db.refresh(appointment)

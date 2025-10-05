@@ -236,8 +236,8 @@ class AppointmentDeleteSchema(BaseSchema):
 class SimpleAppointmentCreateSchema(BaseSchema):
     """Simplified schema for creating an appointment."""
     
-    start_datetime: str = Field(..., description="Start datetime in ISO format (e.g., 2024-01-15T10:00:00)")
-    end_datetime: str = Field(..., description="End datetime in ISO format (e.g., 2024-01-15T11:00:00)")
+    start_datetime: str = Field(..., description="Start datetime in ISO format. If no timezone is specified, assumes UTC (e.g., 2024-01-15T10:00:00 or 2024-01-15T10:00:00Z)")
+    end_datetime: str = Field(..., description="End datetime in ISO format. If no timezone is specified, assumes UTC (e.g., 2024-01-15T11:00:00 or 2024-01-15T11:00:00Z)")
     patient_document_type_id: int = Field(..., description="Patient document type ID")
     patient_document_number: str = Field(..., description="Patient document number")
     doctor_document_type_id: int = Field(..., description="Doctor document type ID")
@@ -251,12 +251,29 @@ class SimpleAppointmentCreateSchema(BaseSchema):
     
     @validator('start_datetime', 'end_datetime')
     def validate_datetime(cls, v):
-        """Validate datetime format."""
+        """Validate datetime format and convert to UTC."""
         try:
             from datetime import datetime
-            return datetime.fromisoformat(v.replace('Z', '+00:00'))
+            import pytz
+            
+            # Parse the datetime string
+            if v.endswith('Z'):
+                # UTC timezone
+                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
+            elif '+' in v or v.count('-') > 2:
+                # Has timezone info
+                dt = datetime.fromisoformat(v)
+            else:
+                # No timezone info - assume it's local time and convert to UTC
+                # For now, we'll assume it's UTC to maintain backward compatibility
+                # In production, you might want to get the timezone from tenant settings
+                dt = datetime.fromisoformat(v)
+                # Mark as UTC
+                dt = dt.replace(tzinfo=pytz.UTC)
+            
+            return dt
         except ValueError:
-            raise ValueError(f"Invalid datetime format: {v}. Use ISO format like '2024-01-15T10:00:00'")
+            raise ValueError(f"Invalid datetime format: {v}. Use ISO format like '2024-01-15T10:00:00' or '2024-01-15T10:00:00Z'")
     
     @validator('custom_fields')
     def validate_custom_fields(cls, v):

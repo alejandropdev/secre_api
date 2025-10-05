@@ -180,9 +180,10 @@ class DoctorAvailabilityService:
             end_time = datetime.combine(date.date(), availability.end_time)
             duration = timedelta(minutes=availability.appointment_duration_minutes)
             
-            # Make timezone-aware
-            current_time = current_time.replace(tzinfo=None)
-            end_time = end_time.replace(tzinfo=None)
+            # Make timezone-aware (assume UTC for local times)
+            import pytz
+            current_time = current_time.replace(tzinfo=pytz.UTC)
+            end_time = end_time.replace(tzinfo=pytz.UTC)
             
             while current_time + duration <= end_time:
                 slot_end = current_time + duration
@@ -195,7 +196,7 @@ class DoctorAvailabilityService:
                 
                 # Check if this slot conflicts with existing appointments
                 is_booked = any(
-                    current_time < ap.end_utc.replace(tzinfo=None) and slot_end > ap.start_utc.replace(tzinfo=None)
+                    current_time < ap.end_utc and slot_end > ap.start_utc
                     for ap in appointments
                 )
                 
