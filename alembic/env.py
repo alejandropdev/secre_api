@@ -99,10 +99,10 @@ async def run_async_migrations() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    # Check if we're in Railway environment (has DATABASE_URL)
+    # Check if we're in Railway environment (has DATABASE_URL) or forced sync mode
     import os
-    if os.getenv("DATABASE_URL"):
-        # Use sync migrations for Railway
+    if os.getenv("DATABASE_URL") or os.getenv("ALEMBIC_SYNC_MODE"):
+        # Use sync migrations for Railway or when forced
         run_sync_migrations()
     else:
         # Use async migrations for local development

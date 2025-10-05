@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '009_add_api_key_usage_metrics'
-down_revision = '3eb45c4c46ff_update_doctor_blocked_time_timezone'
+down_revision = '3eb45c4c46ff'
 branch_labels = None
 depends_on = None
 

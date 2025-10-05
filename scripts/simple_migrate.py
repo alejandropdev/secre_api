@@ -31,6 +31,8 @@ def run_migrations():
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
         
         # Run migrations
+        # Force sync mode for Railway deployment
+        os.environ["ALEMBIC_SYNC_MODE"] = "true"
         command.upgrade(alembic_cfg, "head")
         print("✅ Migrations completed successfully")
         return True
